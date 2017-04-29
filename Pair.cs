@@ -6,12 +6,13 @@ using System.Threading.Tasks;
 
 namespace HexGame
 {
-    class Program
+    public class Pair
     {
-        static void Main(string[] args)
+        public int x, y;
+        public Pair(int x, int y)
         {
-            Integration MyGame = new Integration();
-            MyGame.PlayGame();
+            this.x = x;
+            this.y = y;
         }
     }
 }
