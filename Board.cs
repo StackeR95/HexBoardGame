@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using System.Collections;
 namespace HexGame
 {
     //--------------------------------------------------------UTILITY CLASSES-------------------------------------------------------------//
@@ -12,6 +12,9 @@ namespace HexGame
         public Cell[,] BoardCell; //2d array of cells, instance of board
         public int[] cord; //most-recently occupied cells
         public int OccCells;
+     
+        
+        
         public State()
         {
             OccCells = 0;
@@ -70,6 +73,9 @@ namespace HexGame
         public int NumofCellsPlayed; //No. of cells player has played
         public Cell[] PlayerCells; //Cells the player played
         public List<Cell> Buffer;
+
+        public DSU SetOfConnections;
+
         public Player(char C, int N)
         {
             Color = C;
@@ -77,15 +83,19 @@ namespace HexGame
             NumofCellsPlayed = 0;
             PlayerCells = new Cell[62];
             Buffer = new List<Cell>();
+            //SetOfConnections = new DSU(C);
         }
 
         public void CopyPlayer(Player p)
         {
+            Buffer = new List<Cell>();
             Color = p.Color;
             num = p.num;
             NumofCellsPlayed = p.NumofCellsPlayed;
             PlayerCells = new Cell[62];
 
+            //SetOfConnections.Copy(p.SetOfConnections);
+            
             for (int i = 0; i < p.Buffer.Count; i++)
             {
                 Cell c = new Cell(p.Buffer[i].CorX, p.Buffer[i].CorY, p.Buffer[i].OccupiedBy, p.Buffer[i].flag);
@@ -98,19 +108,25 @@ namespace HexGame
             }
 
         }
+        public void newplay(Cell C, State MyStat)
+        {
+            this.Buffer.Add(C);
+            this.NumofCellsPlayed++;
+            this.PlayerCells[this.NumofCellsPlayed - 1] = C;
+            //SetOfConnections.update(new Pair(C.CorX, C.CorY), MyStat);
+        }
     }
     //------------------------------------------------------------------------------------------------------------------------------------//
     public class Board
     {
-        public stack MySt; //Stack
         public Player P1; //Player 1 representing me (my agent)
         public Player P2; //Player 2 representing the other player
         public State HexBoard; //My main game board
-
+        public int swappedflag = 0; //If swapped applied
 
         //------------------------------------------------Utitlity Functions of Board--------------------------------------------------------//
         //Only used implicitly in Board functions, aren't used by anything outside the board
-        private int CheckNeighbours(Cell c, ref Player P, ref State s)
+        private int CheckNeighbours(Cell c, ref Player P, ref State s, ref stack MySt)
         {
             int i = c.CorX;
             int j = c.CorY;
@@ -166,7 +182,7 @@ namespace HexGame
             while (PopCounter > 0)
             {
                 PopCounter--;
-                if (CheckNeighbours(MySt.C[MySt.top], ref P, ref s) == 24)
+                if (CheckNeighbours(MySt.C[MySt.top], ref P, ref s, ref MySt) == 24)
                 {
                     while (MySt.top > 0)
                         MySt.Pop();
@@ -196,24 +212,30 @@ namespace HexGame
         public Board()
         {
             HexBoard = new State();
-            P1 = new Player('R', 1);
-            P2 = new Player('B', 2);
-            MySt = new stack();
+
+            
         }
 
-         
+
         public void SwapAtFirstTurn()
         {
-            P1.Color = 'B';
-            P2.Color = 'R';
+
+            /////////////////////////////// PRIORITY QUEUES WILL EXCHANGE DATA ////////////////////////////
+            int p1num = P1.num;
+            int p2num = P2.num;
 
 
-            P2.NumofCellsPlayed++;
-            P2.PlayerCells[P2.NumofCellsPlayed - 1] = P1.PlayerCells[0];
-            P1.PlayerCells[0] = null;
-            P1.NumofCellsPlayed--;
+            Player t = new Player(' ', 0);
+            t.CopyPlayer(P2);
+            P2.CopyPlayer(P1);
+            P1.CopyPlayer(t);
 
-            HexBoard.BoardCell[HexBoard.cord[0], HexBoard.cord[1]].OccupiedBy = P2.Color;
+            P1.num = p1num;
+            P2.num = p2num;
+
+
+
+
         }
 
         public List<Bridge> PointBridges(Pair Po)
@@ -348,7 +370,7 @@ namespace HexGame
                 }
             }
 
-            if (LegalPair.Count != 0) return LegalPair;
+           //if (LegalPair.Count != 0) return LegalPair;
 
             /////////////////////////////////////////////
 
@@ -589,6 +611,7 @@ namespace HexGame
 
         public int Winner(ref Player P, ref State s)
         {
+            stack MySt = new stack();
             int Counter0 = 0;
             int Counter10 = 0;
             List<Cell> temp = new List<Cell>();
@@ -617,7 +640,7 @@ namespace HexGame
                         s.BoardCell[P.Buffer[0].CorX, P.Buffer[0].CorY].flag = 0;
 
                         MySt.Push(P.Buffer[0]);
-                        if (CheckNeighbours(MySt.C[MySt.top], ref P, ref s) == 24)
+                        if (CheckNeighbours(MySt.C[MySt.top], ref P, ref s, ref MySt) == 24)
                             return P.num;
                         MySt.Pop();
                     }
@@ -628,7 +651,7 @@ namespace HexGame
                         {
                             s.BoardCell[P.Buffer[0].CorX, P.Buffer[0].CorY].flag = 0;
                             MySt.Push(P.Buffer[0]);
-                            if (CheckNeighbours(MySt.C[MySt.top], ref P, ref s) == 24)
+                            if (CheckNeighbours(MySt.C[MySt.top], ref P, ref s, ref MySt) == 24)
                                 return P.num;
                             MySt.Pop();
                         }
@@ -664,7 +687,7 @@ namespace HexGame
                         s.BoardCell[P.Buffer[0].CorX, P.Buffer[0].CorY].flag = 0;
 
                         MySt.Push(P.Buffer[0]);
-                        if (CheckNeighbours(MySt.C[MySt.top], ref P, ref s) == 24)
+                        if (CheckNeighbours(MySt.C[MySt.top], ref P, ref s, ref MySt) == 24)
                             return P.num;
                         MySt.Pop();
                     }
@@ -675,7 +698,7 @@ namespace HexGame
                         {
                             s.BoardCell[P.Buffer[0].CorX, P.Buffer[0].CorY].flag = 0;
                             MySt.Push(P.Buffer[0]);
-                            if (CheckNeighbours(MySt.C[MySt.top], ref P, ref s) == 24)
+                            if (CheckNeighbours(MySt.C[MySt.top], ref P, ref s, ref MySt) == 24)
                                 return P.num;
                             MySt.Pop();
                         }

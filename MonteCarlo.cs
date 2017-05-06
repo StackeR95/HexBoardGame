@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace HexGame
 {
@@ -40,6 +41,7 @@ namespace HexGame
         public Node myTree; //Contains root of tree
         public Node prevmyTree; //My prev. tree, used in optimization
         Board b;
+        private System.Object lockthis = new System.Object();
         /////////////////////
         public MonteCarlo(Board bbb) {
             b = bbb;
@@ -68,23 +70,27 @@ namespace HexGame
                 arr[1] = 5;
                 return arr;
             }
-            else if(initialboard.OccCells == 1)
+            else if(initialboard.OccCells == 1 && b.swappedflag == 0)
             {
-                //todo swap
+                int[] arr = new int[2];
+                arr[0] = -1;
+                arr[1] = -1;
+                b.swappedflag = 1;
+                return arr;
             }
 
             // iterations += 50;
 
-            int iterations = 5000;
+            int iterations = 100;
             //iterations = b.HexBoard.OccCells + 200;
             while (true)
             {
 
-                Node selectednode, selectednode2;
+                Node selectednode;
                 selectednode = Selection(myTree); //Choose highest child which hava best UCB
                 NodeExpansion(selectednode); //Expand that child
-                selectednode2 = Selection(selectednode); //Select the best child
-                Simulation(selectednode2); //Simulate node
+                //selectednode2 = Selection(selectednode); //Select the best child
+                //Simulation(selectednode2); //Simulate node
 
                 iterations--;
                 if (iterations == 0) break;
@@ -143,9 +149,7 @@ namespace HexGame
                     Player p2 = new Player(' ', 0);
                     p1.CopyPlayer(parent.P1);
                     p2.CopyPlayer(parent.P2);
-                    p1.Buffer.Add(c);
-                    p1.NumofCellsPlayed++;
-                    p1.PlayerCells[p1.NumofCellsPlayed - 1] = c;
+                    p1.newplay(c,NewState);///
                     Node NewBorn = new Node(parent, NewState, 0, 0, 1, p1, p2);
                     parent.Children.Add(NewBorn);
                 }
@@ -172,12 +176,18 @@ namespace HexGame
                     Player p2 = new Player(' ', 0);
                     p1.CopyPlayer(parent.P1);
                     p2.CopyPlayer(parent.P2);
-                    p2.Buffer.Add(c);
-                    p2.NumofCellsPlayed++;
-                    p2.PlayerCells[p2.NumofCellsPlayed - 1] = c;
+                    p2.newplay(c, NewState);
                     Node NewBorn = new Node(parent, NewState, 0, 0, 0, p1, p2);
                     parent.Children.Add(NewBorn);
                 }
+            }
+            foreach (Node child in parent.Children)
+            {
+                //Thread my = new System.Threading.Thread(delegate()
+                {
+                    Simulation(child);
+                }//);
+                //my.Start();
             }
         }
 
@@ -204,6 +214,7 @@ namespace HexGame
                     int index = rnd.Next(0, StatesP1.Count);
                     //try
                     //{
+                    //b.PrintBoardConsole(IntState);
                     IntState.BoardCell[StatesP1[index].x, StatesP1[index].y].OccupiedBy = P1.Color;
                     IntState.BoardCell[StatesP1[index].x, StatesP1[index].y].CorX = StatesP1[index].x;
                     IntState.BoardCell[StatesP1[index].x, StatesP1[index].y].CorY = StatesP1[index].y;
@@ -214,22 +225,25 @@ namespace HexGame
                     IntState.cord[1] = StatesP1[index].y;
 
                     Cell c = new Cell(IntState.cord[0], IntState.cord[1], P1.Color, 1);
-                    P1.NumofCellsPlayed++;
-                    P1.PlayerCells[P1.NumofCellsPlayed - 1] = c;
-                    P1.Buffer.Add(c);
+                    P1.newplay(c, IntState);
                     //}
                     //catch (Exception ex)
                     //{
                     //    b.PrintBoardConsole(IntState);
                     //}
-                    int p1;
-                    p1 = b.Winner(ref P1, ref IntState);
-                    if (P1.num == p1)
-                    {
-                        BackPropagation(10, node);
-                        return;
-                    }
+                    
+                        int p1;
+                        p1 = b.Winner(ref P1, ref IntState);
+                        if (P1.num == p1)
+                        {
+                            lock (lockthis)
+                            {
+                                BackPropagation(10, node);
 
+                                return;
+                            }
+                        }
+                    
                     turn = 1;
 
                 }
@@ -252,22 +266,24 @@ namespace HexGame
                     IntState.cord[1] = StatesP2[index].y;
 
                     Cell c = new Cell(IntState.cord[0], IntState.cord[1], P2.Color, 1);
-
-                    P2.NumofCellsPlayed++;
-                    P2.PlayerCells[P2.NumofCellsPlayed - 1] = c;
-                    P2.Buffer.Add(c);
+                    P2.newplay(c, IntState);
                     //}
                     //catch (Exception ex)
                     //{
                     //    b.PrintBoardConsole(IntState);
                     //}
-                    int p2 = b.Winner(ref P2, ref IntState);
-                    if (P2.num == p2)
-                    {
-                        BackPropagation(-5, node);
-                        return;
-                    }
+                   
+                        int p2 = b.Winner(ref P2, ref IntState);
+                        if (P2.num == p2)
+                        {
+                            lock (lockthis)
+                            {
+                                BackPropagation(-5, node);
 
+                                return;
+                            }
+                        }
+                    
                     turn = 0;
                 }
 
@@ -306,7 +322,7 @@ namespace HexGame
             //ni: the number of visits of node
             //N: the total number of visits
             if (ni == 0) return double.PositiveInfinity;
-            else return (vi / ni) + (0.1 * (Math.Sqrt(Math.Log(N) / ni)));
+            else return (vi / ni) + (0.4 * (Math.Sqrt(Math.Log(N) / ni)));
         }
 
         //public Node CompareLists(State myState)
