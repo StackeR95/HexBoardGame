@@ -12,7 +12,7 @@ namespace HexGame
         public Cell[,] BoardCell; //2d array of cells, instance of board
         public int[] cord; //most-recently occupied cells
         public int OccCells;
-        
+     
         
         
         public State()
@@ -83,17 +83,18 @@ namespace HexGame
             NumofCellsPlayed = 0;
             PlayerCells = new Cell[62];
             Buffer = new List<Cell>();
-            SetOfConnections = new DSU(C);
+            //SetOfConnections = new DSU(C);
         }
 
         public void CopyPlayer(Player p)
         {
+            Buffer = new List<Cell>();
             Color = p.Color;
             num = p.num;
             NumofCellsPlayed = p.NumofCellsPlayed;
             PlayerCells = new Cell[62];
 
-            SetOfConnections.Copy(p.SetOfConnections);
+            //SetOfConnections.Copy(p.SetOfConnections);
             
             for (int i = 0; i < p.Buffer.Count; i++)
             {
@@ -112,7 +113,7 @@ namespace HexGame
             this.Buffer.Add(C);
             this.NumofCellsPlayed++;
             this.PlayerCells[this.NumofCellsPlayed - 1] = C;
-            SetOfConnections.update(new Pair(C.CorX, C.CorY), MyStat);
+            //SetOfConnections.update(new Pair(C.CorX, C.CorY), MyStat);
         }
     }
     //------------------------------------------------------------------------------------------------------------------------------------//
@@ -211,24 +212,30 @@ namespace HexGame
         public Board()
         {
             HexBoard = new State();
-            P1 = new Player('R', 1);
-            P2 = new Player('B', 2);
+
             
         }
 
-         
+
         public void SwapAtFirstTurn()
         {
-            P1.Color = 'B';
-            P2.Color = 'R';
+
             /////////////////////////////// PRIORITY QUEUES WILL EXCHANGE DATA ////////////////////////////
+            int p1num = P1.num;
+            int p2num = P2.num;
 
-            P2.NumofCellsPlayed++;
-            P2.PlayerCells[P2.NumofCellsPlayed - 1] = P1.PlayerCells[0];
-            P1.PlayerCells[0] = null;
-            P1.NumofCellsPlayed--;
 
-            HexBoard.BoardCell[HexBoard.cord[0], HexBoard.cord[1]].OccupiedBy = P2.Color;
+            Player t = new Player(' ', 0);
+            t.CopyPlayer(P2);
+            P2.CopyPlayer(P1);
+            P1.CopyPlayer(t);
+
+            P1.num = p1num;
+            P2.num = p2num;
+
+
+
+
         }
 
         public List<Bridge> PointBridges(Pair Po)
@@ -326,224 +333,65 @@ namespace HexGame
 
 
         }
-
-        public List<Bridge> GetVCBridges(Player Pme, State MyState)
-        {
-            List<Bridge> Plays = new List<Bridge>();
-            for (int i = 0; i < Pme.SetOfConnections.ConCount; i++)
-            {
-                Pair tm1, tm2;
-                List<Bridge> PmeBridges;
-                if (Pme.SetOfConnections.Connections[i].Higher.data.Count != 0)
-                {
-
-                    ///////////////////////////////////////////////////
-
-                    tm1 = Pme.SetOfConnections.Connections[i].Higher.Dequeue();
-
-                    PmeBridges = new List<Bridge>();
-                    PmeBridges = GetBridges(tm1.x, tm1.y, MyState);
-                    for (int j = 0; j < PmeBridges.Count; j++)
-                    {
-                        Plays.Add(PmeBridges[j]);
-                    }
-
-                    Pme.SetOfConnections.Connections[i].Higher.Enqueue(tm1);
-
-                    ////////////////////////////////////////////////////
-                    if (Pme.SetOfConnections.Connections[i].Higher.data.Count != 0)
-                    {
-                        tm2 = Pme.SetOfConnections.Connections[i].Higher.Dequeue();
-
-                        PmeBridges = new List<Bridge>();
-                        PmeBridges = GetBridges(tm2.x, tm2.y, MyState);
-                        for (int j = 0; j < PmeBridges.Count; j++)
-                        {
-                            Plays.Add(PmeBridges[j]);
-                        }
-
-                        Pme.SetOfConnections.Connections[i].Higher.Enqueue(tm2);
-                    }
-                    ///////////////////////////////////////////////////
-                    
-                }
-
-                if (Pme.SetOfConnections.Connections[i].Lower.data.Count != 0)
-                {
-                    ///////////////////////////////////////////////////
-
-                    tm1 = Pme.SetOfConnections.Connections[i].Lower.Dequeue();
-
-                    PmeBridges = new List<Bridge>();
-                    PmeBridges = GetBridges(tm1.x, tm1.y, MyState);
-                    for (int j = 0; j < PmeBridges.Count; j++)
-                    {
-                        Plays.Add(PmeBridges[j]);
-                    }
-
-                    Pme.SetOfConnections.Connections[i].Lower.Enqueue(tm1);
-
-                    ////////////////////////////////////////////////////
-                    if (Pme.SetOfConnections.Connections[i].Lower.data.Count != 0)
-                    {
-                        tm2 = Pme.SetOfConnections.Connections[i].Lower.Dequeue();
-                        PmeBridges = new List<Bridge>();
-                        PmeBridges = GetBridges(tm2.x, tm2.y, MyState);
-                        for (int j = 0; j < PmeBridges.Count; j++)
-                        {
-                            Plays.Add(PmeBridges[j]);
-                        }
-                        Pme.SetOfConnections.Connections[i].Lower.Enqueue(tm2);
-                    }
-                    ///////////////////////////////////////////////////
-                }
-            }
-            return Plays;
-        }
-
-
-        public List<Pair> GetVCAdjac(Player Pme, State MyState)
-        {
-            List<Pair> Plays = new List<Pair>();
-            for (int i = 0; i < Pme.SetOfConnections.ConCount; i++)
-            {
-                Pair tm1, tm2;
-
-                List<Pair> adj1;
-                List<Pair> adj2;
-                if (Pme.SetOfConnections.Connections[i].Higher.data.Count != 0)
-                {
-
-                    ///////////////////////////////////////////////////
-
-                    tm1 = Pme.SetOfConnections.Connections[i].Higher.Dequeue();
-
-                    adj1 = new List<Pair>();
-
-                    adj1 = GetAdjacent(tm1, MyState);
-                    for (int j = 0; j < adj1.Count; j++)
-                    {
-                        Plays.Add(adj1[j]);
-                    }
-
-                    Pme.SetOfConnections.Connections[i].Higher.Enqueue(tm1);
-
-                    ////////////////////////////////////////////////////
-                    if (Pme.SetOfConnections.Connections[i].Higher.data.Count != 0)
-                    {
-                        tm2 = Pme.SetOfConnections.Connections[i].Higher.Dequeue();
-
-                        adj2 = new List<Pair>();
-                        adj2 = GetAdjacent(tm2, MyState);
-                        for (int j = 0; j < adj2.Count; j++)
-                        {
-                            Plays.Add(adj2[j]);
-                        }
-                        Pme.SetOfConnections.Connections[i].Higher.Enqueue(tm2);
-                    }
-                    ///////////////////////////////////////////////////
-
-                }
-
-                if (Pme.SetOfConnections.Connections[i].Lower.data.Count != 0)
-                {
-                    ///////////////////////////////////////////////////
-
-                    tm1 = Pme.SetOfConnections.Connections[i].Lower.Dequeue();
-
-                    adj1 = new List<Pair>();
-
-                    adj1 = GetAdjacent(tm1, MyState);
-                    for (int j = 0; j < adj1.Count; j++)
-                    {
-                        Plays.Add(adj1[j]);
-                    }
-
-                    Pme.SetOfConnections.Connections[i].Lower.Enqueue(tm1);
-
-                    ////////////////////////////////////////////////////
-                    if (Pme.SetOfConnections.Connections[i].Lower.data.Count != 0)
-                    {
-                        tm2 = Pme.SetOfConnections.Connections[i].Lower.Dequeue();
-
-                        adj2 = new List<Pair>();
-                        adj2 = GetAdjacent(tm2, MyState);
-                        for (int j = 0; j < adj2.Count; j++)
-                        {
-                            Plays.Add(adj2[j]);
-                        }
-                        Pme.SetOfConnections.Connections[i].Lower.Enqueue(tm2);
-                    }
-                    ///////////////////////////////////////////////////
-                }
-            }
-            return Plays;
-        }
-        public List<Pair> LegalPlays(Player Pme, Player Popp, State MyState) //Used in simulation & node expansion
+        public List<Pair> LegalPlays(Player Pme, Player Popp,State MyState) //Used in simulation & node expansion
         {
 
             HashSet<Pair> Prev = new HashSet<Pair>();
-            bool[,] Hash;
-            Hash = new bool[11, 11];
-            
+
             List<Pair> LegalPair = new List<Pair>();
 
             List<Pair> MustPair = new List<Pair>();
-
-            List<Bridge> PrioBridges = new List<Bridge>();
-
-            List<Pair> PrioAdjac = new List<Pair>();
 
             MustPair = MustPlay(Pme, MyState);
 
             for (int i = 0; i < MustPair.Count; i++)
             {
-                if (!Hash[MustPair[i].x, MustPair[i].y]/*!Prev.Contains(MustPair[i])*/)
+                if (!Prev.Contains(MustPair[i]))
                 {
                     LegalPair.Add(MustPair[i]);
                     Prev.Add(MustPair[i]);
-                    Hash[MustPair[i].x, MustPair[i].y] = true;
                 }
             }
 
             if (LegalPair.Count != 0) return LegalPair;
 
-            //if (Pme.Color == 'B') goto Block;
-            //////////////////////////////////////////////
-
-            ///*GetPrio*/:
-
-            PrioBridges = GetVCBridges(Pme, MyState);
-
-            for (int i = 0; i < PrioBridges.Count; i++)
+            /////////////////////////////////////////////
+            for (int i = 0; i < Pme.NumofCellsPlayed; i++)
             {
-                if (!Hash[PrioBridges[i].Pos.x, PrioBridges[i].Pos.y])//!Prev.Contains(PrioBridges[i].Pos))
+                List<Bridge> PmeBridges = new List<Bridge>();
+                PmeBridges = GetBridges(Pme.PlayerCells[i].CorX, Pme.PlayerCells[i].CorY, MyState);
+                for (int j = 0; j < PmeBridges.Count; j++)
                 {
-                    LegalPair.Add(PrioBridges[i].Pos);
-                    Prev.Add(PrioBridges[i].Pos);
-                    Hash[PrioBridges[i].Pos.x, PrioBridges[i].Pos.y] = true;
+                    if (!Prev.Contains(PmeBridges[j].Pos))
+                    {
+                        LegalPair.Add(PmeBridges[j].Pos);
+                        Prev.Add(PmeBridges[j].Pos);
+                    }
                 }
             }
 
-            if (LegalPair.Count != 0) goto OppCalc;
+           //if (LegalPair.Count != 0) return LegalPair;
 
-            //////////////////////////////////////////////
+            /////////////////////////////////////////////
 
-            PrioAdjac = GetVCAdjac(Pme, MyState);
-
-            for (int i = 0; i < PrioAdjac.Count; i++)
+            for (int i = 0; i < Popp.NumofCellsPlayed; i++)
             {
-                if (!Hash[PrioAdjac[i].x, PrioAdjac[i].y])//!Prev.Contains(PrioAdjac[i]))
+                List<Bridge> PoppBridges = new List<Bridge>();
+                PoppBridges = GetBridges(Popp.PlayerCells[i].CorX, Popp.PlayerCells[i].CorY, MyState);
+                for (int j = 0; j < PoppBridges.Count; j++)
                 {
-                    LegalPair.Add(PrioAdjac[i]);
-                    Prev.Add(PrioAdjac[i]);
-                    Hash[PrioAdjac[i].x, PrioAdjac[i].y] = true;
+                    for (int k = 0; k < PoppBridges[j].mids.Count; k++)
+                    {
+                        if (!Prev.Contains(PoppBridges[j].mids[k]))
+                        {
+                            LegalPair.Add(PoppBridges[j].mids[k]);
+                            Prev.Add(PoppBridges[j].mids[k]);
+                        }
+                    }
+                    
                 }
             }
-
-            if (LegalPair.Count != 0) goto OppCalc;
-
-            ////////////////////////////////////////////// Play in my midlocks
+            if (LegalPair.Count != 0) return LegalPair;
 
             for (int i = 0; i < Pme.NumofCellsPlayed; i++)
             {
@@ -553,218 +401,42 @@ namespace HexGame
                 {
                     if (MyState.BoardCell[PmeBridges[j].Pos.x, PmeBridges[j].Pos.y].OccupiedBy == Pme.Color)
                     {
-                        if (/*!Prev.Contains(PmeBridges[j].mids[0])*/!Hash[PmeBridges[j].mids[0].x, PmeBridges[j].mids[0].y] && MyState.BoardCell[PmeBridges[j].mids[0].x, PmeBridges[j].mids[0].y].OccupiedBy == 'N')
+                        if (!Prev.Contains(PmeBridges[j].mids[0]) && MyState.BoardCell[PmeBridges[j].mids[0].x, PmeBridges[j].mids[0].y].OccupiedBy == 'N')
                         {
                             LegalPair.Add(PmeBridges[j].mids[0]);
                             Prev.Add(PmeBridges[j].mids[0]);
-                            Hash[PmeBridges[j].mids[0].x, PmeBridges[j].mids[0].y] = true;
                         }
-                        if (/*!Prev.Contains(PmeBridges[j].mids[1])*/!Hash[PmeBridges[j].mids[1].x, PmeBridges[j].mids[1].y] && MyState.BoardCell[PmeBridges[j].mids[1].x, PmeBridges[j].mids[1].y].OccupiedBy == 'N')
+                        if (!Prev.Contains(PmeBridges[j].mids[1]) && MyState.BoardCell[PmeBridges[j].mids[1].x, PmeBridges[j].mids[1].y].OccupiedBy == 'N')
                         {
                             LegalPair.Add(PmeBridges[j].mids[1]);
                             Prev.Add(PmeBridges[j].mids[1]);
-                            Hash[PmeBridges[j].mids[0].x, PmeBridges[j].mids[0].y] = true;
                         }
-                    }
-                }
-            }
-
-        ////////////////////////////////////////////// Play in opponent VC midlocks
-
-        //Block:
-
-        OppCalc:
-            List<Bridge> PoppBridges = new List<Bridge>();
-            PoppBridges = GetVCBridges(Popp, MyState);
-            for (int i = 0; i < PoppBridges.Count; i++)
-            {
-                for (int k = 0; k < PoppBridges[i].mids.Count; k++)
-                {
-                    if (!Hash[PoppBridges[i].mids[k].x, PoppBridges[i].mids[k].y])//!Prev.Contains(PoppBridges[i].mids[k]))
-                    {
-                        LegalPair.Add(PoppBridges[i].mids[k]);
-                        Prev.Add(PoppBridges[i].mids[k]);
-                        Hash[PoppBridges[i].mids[k].x, PoppBridges[i].mids[k].y] = true;
-                    }
-                    if (!Hash[PoppBridges[i].Pos.x, PoppBridges[i].Pos.y])
-                    {
-                        LegalPair.Add(PoppBridges[i].Pos);
-                        Hash[PoppBridges[i].Pos.x, PoppBridges[i].Pos.y] = true;
-                    }
-                }
-            }
-
-            if (PoppBridges.Count != 0) return LegalPair;
-
-            /////////////////////////////////////////////// Play in Opponent Adjacent
-
-            for (int i = 0; i < Popp.NumofCellsPlayed; i++)
-            {
-                List<Pair> oppadjacent = new List<Pair>();
-                oppadjacent = GetAdjacent(new Pair(Popp.PlayerCells[i].CorX, Popp.PlayerCells[i].CorY), MyState);
-                for (int j = 0; j < oppadjacent.Count; j++)
-                {
-                    if (!Hash[oppadjacent[j].x, oppadjacent[j].y])//!Prev.Contains(oppadjacent[j]))
-                    {
-                        LegalPair.Add(oppadjacent[j]);
-                        Prev.Add(oppadjacent[j]);
-                        Hash[oppadjacent[j].x, oppadjacent[j].y] = true;
                     }
                 }
             }
             if (LegalPair.Count != 0) return LegalPair;
-
-            ////////////////////////////////////////////// Play in my Adjacent cells 
-
             for (int i = 0; i < Pme.NumofCellsPlayed; i++)
             {
-                List<Pair> myadjacent = new List<Pair>();
+                List<Pair> myadjacent= new List<Pair>();
                 myadjacent = GetAdjacent(new Pair(Pme.PlayerCells[i].CorX, Pme.PlayerCells[i].CorY), MyState);
                 for (int j = 0; j < myadjacent.Count; j++)
                 {
-                    if (!Hash[myadjacent[j].x, myadjacent[j].y])//!Prev.Contains(myadjacent[j]))
-                    {
-                        LegalPair.Add(myadjacent[j]);
-                        Prev.Add(myadjacent[j]);
-                        Hash[myadjacent[j].x, myadjacent[j].y] = true;
-                    }
+                    if (!Prev.Contains(myadjacent[j]))
+                        {
+                            LegalPair.Add(myadjacent[j]);
+                            Prev.Add(myadjacent[j]);
+                        }
+                    
+
                 }
             }
-            
-            //if (LegalPair.Count != 0) return LegalPair;
+
 
             //if (LegalPair.Count == 0)
             //    Console.Write("sdjfhlk");
 
             return LegalPair;
         }
-
-        //public List<Pair> LegalPlays(Player Pme, Player Popp,State MyState) //Used in simulation & node expansion
-        //{
-
-        //    HashSet<Pair> Prev = new HashSet<Pair>();
-
-        //    List<Pair> LegalPair = new List<Pair>();
-
-        //    List<Pair> MustPair = new List<Pair>();
-
-        //    List<Pair> Prio = new List<Pair>();
-
-        //    MustPair = MustPlay(Pme, MyState);
-
-        //    for (int i = 0; i < MustPair.Count; i++)
-        //    {
-        //        if (!Prev.Contains(MustPair[i]))
-        //        {
-        //            LegalPair.Add(MustPair[i]);
-        //            Prev.Add(MustPair[i]);
-        //        }
-        //    }
-
-        //    if (LegalPair.Count != 0) return LegalPair;
-
-        //    //////////////////////////////////////////////
-
-        //    Prio = GetVCPlays(Pme, MyState);
-
-        //    for (int i = 0; i < Prio.Count; i++)
-        //    {
-        //        if (!Prev.Contains(Prio[i]))
-        //        {
-        //            LegalPair.Add(Prio[i]);
-        //            Prev.Add(Prio[i]);
-        //        }
-        //    }
-
-        //    //if (LegalPair.Count != 0) return LegalPair;
-
-
-        //    //////////////////////////////////////////////
-
-        //    for (int i = 0; i < Popp.NumofCellsPlayed; i++)
-        //    {
-        //        List<Bridge> PoppBridges = new List<Bridge>();
-        //        PoppBridges = GetBridges(Popp.PlayerCells[i].CorX, Popp.PlayerCells[i].CorY, MyState);
-        //        for (int j = 0; j < PoppBridges.Count; j++)
-        //        {
-        //            for (int k = 0; k < PoppBridges[j].mids.Count; k++)
-        //            {
-        //                if (!Prev.Contains(PoppBridges[j].mids[k]))
-        //                {
-        //                    LegalPair.Add(PoppBridges[j].mids[k]);
-        //                    Prev.Add(PoppBridges[j].mids[k]);
-        //                }
-        //            }
-
-        //        }
-        //    }
-        //    if (LegalPair.Count != 0) return LegalPair;
-
-        //    /////////////////////////////////////////////
-        //    for (int i = 0; i < Pme.NumofCellsPlayed; i++)
-        //    {
-        //        List<Bridge> PmeBridges = new List<Bridge>();
-        //        PmeBridges = GetBridges(Pme.PlayerCells[i].CorX, Pme.PlayerCells[i].CorY, MyState);
-        //        for (int j = 0; j < PmeBridges.Count; j++)
-        //        {
-        //            if (!Prev.Contains(PmeBridges[j].Pos))
-        //            {
-        //                LegalPair.Add(PmeBridges[j].Pos);
-        //                Prev.Add(PmeBridges[j].Pos);
-        //            }
-        //        }
-        //    }
-
-        //    //if (LegalPair.Count != 0) return LegalPair;
-
-        //    /////////////////////////////////////////////
-
-        //    for (int i = 0; i < Pme.NumofCellsPlayed; i++)
-        //    {
-        //        List<Bridge> PmeBridges = new List<Bridge>();
-        //        PmeBridges = PointBridges(new Pair(Pme.PlayerCells[i].CorX, Pme.PlayerCells[i].CorY));
-        //        for (int j = 0; j < PmeBridges.Count; j++)
-        //        {
-        //            if (MyState.BoardCell[PmeBridges[j].Pos.x, PmeBridges[j].Pos.y].OccupiedBy == Pme.Color)
-        //            {
-        //                if (!Prev.Contains(PmeBridges[j].mids[0]) && MyState.BoardCell[PmeBridges[j].mids[0].x, PmeBridges[j].mids[0].y].OccupiedBy == 'N')
-        //                {
-        //                    LegalPair.Add(PmeBridges[j].mids[0]);
-        //                    Prev.Add(PmeBridges[j].mids[0]);
-        //                }
-        //                if (!Prev.Contains(PmeBridges[j].mids[1]) && MyState.BoardCell[PmeBridges[j].mids[1].x, PmeBridges[j].mids[1].y].OccupiedBy == 'N')
-        //                {
-        //                    LegalPair.Add(PmeBridges[j].mids[1]);
-        //                    Prev.Add(PmeBridges[j].mids[1]);
-        //                }
-        //            }
-        //        }
-        //    }
-
-        //    if (LegalPair.Count != 0) return LegalPair;
-
-        //    for (int i = 0; i < Pme.NumofCellsPlayed; i++)
-        //    {
-        //        List<Pair> myadjacent= new List<Pair>();
-        //        myadjacent = GetAdjacent(new Pair(Pme.PlayerCells[i].CorX, Pme.PlayerCells[i].CorY), MyState);
-        //        for (int j = 0; j < myadjacent.Count; j++)
-        //        {
-        //            if (!Prev.Contains(myadjacent[j]))
-        //                {
-        //                    LegalPair.Add(myadjacent[j]);
-        //                    Prev.Add(myadjacent[j]);
-        //                }
-        //        }
-        //    }
-
-
-        //    //if (LegalPair.Count == 0)
-        //    //    Console.Write("sdjfhlk");
-
-        //    return LegalPair;
-        //}
-
-
 
 
         //public List<State> LegalPlays(Player P, State MyState) //Used in simulation & node expansion

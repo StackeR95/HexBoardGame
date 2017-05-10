@@ -12,7 +12,6 @@ namespace HexGame
         static void Main(string[] args)
         {
             Integration MyGame = new Integration();
-            //Test MyGame = new Test();
             MyGame.PlayGame();
         }
     }
