@@ -39,7 +39,6 @@ namespace HexGame
     {
         //Global Section
         public Node myTree; //Contains root of tree
-        public Node prevmyTree; //My prev. tree, used in optimization
         Board b;
         private System.Object lockthis = new System.Object();
         /////////////////////
@@ -51,18 +50,9 @@ namespace HexGame
         public int[] runalgo(State initialboard)
         {
            
-            //Node CompStates = CompareLists(initialboard);
-            //  if (CompStates != null)
-            //  {
-            //CompStates.Parent = null;
-            //myTree.Add(CompStates);
-            //    myTree = prevmyTree;
-            //}
-            //else
-            //{
+            
             myTree = new Node(null, initialboard, 0, 0, 0, b.P1, b.P2);
-
-            //}
+            
             if(initialboard.OccCells == 0)
             {
                 int []arr = new int[2];
@@ -70,28 +60,38 @@ namespace HexGame
                 arr[1] = 5;
                 return arr;
             }
-            else if(initialboard.OccCells == 1 && b.swappedflag == 0)
+            else if (initialboard.OccCells == 1 && b.swappedflag == 0)
+            {
+                if ((b.HexBoard.cord[0] == 5 && b.HexBoard.cord[1] == 5) || (b.HexBoard.cord[0] == 5 && b.HexBoard.cord[1] == 6) ||
+                    (b.HexBoard.cord[0] == 5 && b.HexBoard.cord[1] == 4) || (b.HexBoard.cord[0] == 4 && b.HexBoard.cord[1] == 5) ||
+                    (b.HexBoard.cord[0] == 6 && b.HexBoard.cord[1] == 5)) {
+                    int[] arr = new int[2];
+                    arr[0] = -1;
+                    arr[1] = -1;
+                    b.swappedflag = 1;
+                    return arr;
+                }
+            }
+
+
+            List<Pair> Must = new List<Pair>();
+            Must =  b.MustPlay(b.P1, initialboard);
+            if(Must.Count != 0)
             {
                 int[] arr = new int[2];
-                arr[0] = -1;
-                arr[1] = -1;
-                b.swappedflag = 1;
+                arr[0] = Must[0].x;
+                arr[1] = Must[0].y;
                 return arr;
             }
 
-            // iterations += 50;
-
             int iterations = 100;
-            //iterations = b.HexBoard.OccCells + 200;
             while (true)
             {
 
                 Node selectednode;
                 selectednode = Selection(myTree); //Choose highest child which hava best UCB
                 NodeExpansion(selectednode); //Expand that child
-                //selectednode2 = Selection(selectednode); //Select the best child
-                //Simulation(selectednode2); //Simulate node
-
+            
                 iterations--;
                 if (iterations == 0) break;
 
@@ -99,9 +99,7 @@ namespace HexGame
 
             Node myNextState = null;
             myNextState = HighestUCB(myTree); //Return best child/move for tree root
-
-            //prevmyTree = new List<Node>();
-            //prevmyTree = myTree;
+            
             return myNextState.MyState.cord;
         }
         
@@ -149,8 +147,16 @@ namespace HexGame
                     Player p2 = new Player(' ', 0);
                     p1.CopyPlayer(parent.P1);
                     p2.CopyPlayer(parent.P2);
+
                     p1.newplay(c,NewState);///
+                    
                     Node NewBorn = new Node(parent, NewState, 0, 0, 1, p1, p2);
+                    
+                    p1.Buffer.Clear();
+                    p1.SetOfConnections.Connections.Clear();
+                    p2.Buffer.Clear();
+                    p2.SetOfConnections.Connections.Clear();
+                    
                     parent.Children.Add(NewBorn);
                 }
             }
@@ -176,18 +182,27 @@ namespace HexGame
                     Player p2 = new Player(' ', 0);
                     p1.CopyPlayer(parent.P1);
                     p2.CopyPlayer(parent.P2);
+                    
                     p2.newplay(c, NewState);
+                    
                     Node NewBorn = new Node(parent, NewState, 0, 0, 0, p1, p2);
+                    
+                    p1.Buffer.Clear();
+                    p1.SetOfConnections.Connections.Clear();
+                    p2.Buffer.Clear();
+                    p2.SetOfConnections.Connections.Clear();
+                    
                     parent.Children.Add(NewBorn);
                 }
             }
+            
             foreach (Node child in parent.Children)
             {
-                //Thread my = new System.Threading.Thread(delegate()
+                Thread my = new System.Threading.Thread(delegate()
                 {
                     Simulation(child);
-                }//);
-                //my.Start();
+                });
+                my.Start();
             }
         }
 
@@ -206,15 +221,13 @@ namespace HexGame
             {
                 if (turn == 0)
                 {
-
-                    //b.PrintBoardConsole(IntState);
+                    
                     List<Pair> StatesP1 = b.LegalPlays(P1, P2, IntState);
+
+                    if (StatesP1.Count == 0) b.PrintBoardConsole(IntState);
 
                     Random rnd = new Random();
                     int index = rnd.Next(0, StatesP1.Count);
-                    //try
-                    //{
-                    //b.PrintBoardConsole(IntState);
                     IntState.BoardCell[StatesP1[index].x, StatesP1[index].y].OccupiedBy = P1.Color;
                     IntState.BoardCell[StatesP1[index].x, StatesP1[index].y].CorX = StatesP1[index].x;
                     IntState.BoardCell[StatesP1[index].x, StatesP1[index].y].CorY = StatesP1[index].y;
@@ -226,11 +239,6 @@ namespace HexGame
 
                     Cell c = new Cell(IntState.cord[0], IntState.cord[1], P1.Color, 1);
                     P1.newplay(c, IntState);
-                    //}
-                    //catch (Exception ex)
-                    //{
-                    //    b.PrintBoardConsole(IntState);
-                    //}
                     
                         int p1;
                         p1 = b.Winner(ref P1, ref IntState);
@@ -249,13 +257,11 @@ namespace HexGame
                 }
                 else
                 { //Hwa eli yl3b el awal
-
+                    
                     List<Pair> StatesP2 = b.LegalPlays(P2, P1, IntState);
-
+                    if(StatesP2.Count == 0) b.PrintBoardConsole(IntState);
                     Random rnd = new Random();
                     int index = rnd.Next(0, StatesP2.Count);
-                    //try
-                    //{
                     IntState.BoardCell[StatesP2[index].x, StatesP2[index].y].OccupiedBy = P2.Color;
                     IntState.BoardCell[StatesP2[index].x, StatesP2[index].y].CorX = StatesP2[index].x;
                     IntState.BoardCell[StatesP2[index].x, StatesP2[index].y].CorY = StatesP2[index].y;
@@ -267,12 +273,6 @@ namespace HexGame
 
                     Cell c = new Cell(IntState.cord[0], IntState.cord[1], P2.Color, 1);
                     P2.newplay(c, IntState);
-                    //}
-                    //catch (Exception ex)
-                    //{
-                    //    b.PrintBoardConsole(IntState);
-                    //}
-                   
                         int p2 = b.Winner(ref P2, ref IntState);
                         if (P2.num == p2)
                         {
@@ -325,34 +325,7 @@ namespace HexGame
             else return (vi / ni) + (0.4 * (Math.Sqrt(Math.Log(N) / ni)));
         }
 
-        //public Node CompareLists(State myState)
-        //{
-        //    bool found = true;
-        //    for (int i = 0; i < prevmyTree.Count; i++)
-        //    {
-        //        State mys = prevmyTree[i].MyState;
-        //        for (int x = 0; x < 11; x++)
-        //        {
-        //            for (int y = 0; y < 11; y++)
-        //            {
-
-        //                Cell c = mys.BoardCell[x, y];
-        //                if (c.CorX != myState.BoardCell[x, y].CorX || c.CorY != myState.BoardCell[x, y].CorY || c.flag != myState.BoardCell[x, y].flag || c.OccupiedBy != myState.BoardCell[x, y].OccupiedBy)
-        //                {
-        //                    found = false;
-        //                    break;
-        //                }
-
-        //            }
-        //            if (found == false) break;
-
-        //        }
-        //        if (found == true) return prevmyTree[i];
-        //    }
-        //    return null;
-        //}
-
-
+    
     }
 
 

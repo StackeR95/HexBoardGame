@@ -47,7 +47,7 @@ namespace HexGame
                 MyBoard.P1 = new Player('R', 1);
                 MyBoard.P2 = new Player('B', 2);
             }
-            
+
 
             while (true)
             {
@@ -67,7 +67,7 @@ namespace HexGame
                     else
                     {
                         Cell c = MyBoard.UpdateMyBoard(MyPlay[0], MyPlay[1], MyBoard.P1, ref MyBoard.HexBoard);
-                      
+
                         if (c == null)
                         {
                             Console.WriteLine("Cell out of range or Occupied(Agent).");
@@ -122,7 +122,7 @@ namespace HexGame
                             Console.WriteLine("Cell out of range(P2).");
                             goto OpponentAgain;
                         }
-                     
+
 
                         MyBoard.P2.newplay(c2, MyBoard.HexBoard);
                         int p = MyBoard.Winner(ref MyBoard.P2, ref MyBoard.HexBoard);

@@ -10,13 +10,12 @@ namespace HexGame
     {
         public List<Pair> data;
         private int pos; //1 ==> upper, 2 ==> lower, 3 ==> left, 4 ==> right
-        public HashSet<Pair> Prev;
-
+        public bool[] Prev;
         public PriorityQueue(int pos)
         {
             this.data = new List<Pair>();
             this.pos = pos;
-            this.Prev = new HashSet<Pair>();
+            Prev = new bool[11 * 11];
         }
         public void Copy(PriorityQueue cp)
         {
@@ -24,23 +23,23 @@ namespace HexGame
                 System.Console.WriteLine("dsjbfb");
             for (int i = 0; i < cp.data.Count; i++)
             {
-                Pair x = new Pair(cp.data[i].x, cp.data[i].y);
-                this.data.Add(x);
-                this.Prev.Add(x);
+                if (i > 200)
+                    System.Console.WriteLine("dsjbfb");
+                //Pair x = new Pair(cp.data[i].x, cp.data[i].y);
+                this.Enqueue(cp.data[i]);
             }
-            
         }
         public void Enqueue(Pair item)
         {
-            if (Prev.Contains(item)) return;
-            Prev.Add(item);
+            if (Prev[item.x*11 + item.y]) return;
+            Prev[item.x * 11 + item.y] = true;
             data.Add(item);
             int ci = data.Count - 1; // child index; start at end
             while (ci > 0)
             {
                 int pi = (ci - 1) / 2; // parent index
                 if (data[ci].CompareTo(data[pi],pos) <= 0) break; // child item is smaller than (or equal) parent so we're done
-                Pair tmp = data[ci]; data[ci] = data[pi]; data[pi] = tmp;
+                Pair tmp = new Pair(data[ci].x, data[ci].y); data[ci] = data[pi]; data[pi] = tmp;
                 ci = pi;
             }
         }
@@ -49,8 +48,9 @@ namespace HexGame
         {
             // assumes pq is not empty; up to calling code
             int li = data.Count - 1; // last index (before removal)
-            Pair frontItem = data[0];   // fetch the front
+            Pair frontItem = new Pair(data[0].x,data[0].y);   // fetch the front
             data[0] = data[li];
+            Prev[data[0].x * 11 + data[0].y] = false;
             data.RemoveAt(li);
 
             --li; // last index (after removal)
@@ -71,7 +71,7 @@ namespace HexGame
 
         public Pair Peek()
         {
-            Pair frontItem = data[0];
+            Pair frontItem = new Pair(data[0].x,data[0].y);
             return frontItem;
         }
 
