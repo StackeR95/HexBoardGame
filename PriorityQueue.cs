@@ -1,0 +1,108 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace HexGame
+{
+    public class PriorityQueue
+    {
+        public List<Pair> data;
+        private int pos; //1 ==> upper, 2 ==> lower, 3 ==> left, 4 ==> right
+        public bool[] Prev;
+        public PriorityQueue(int pos)
+        {
+            this.data = new List<Pair>();
+            this.pos = pos;
+            Prev = new bool[11 * 11];
+        }
+        public void Copy(PriorityQueue cp)
+        {
+            if (cp.data.Count > 100)
+                System.Console.WriteLine("dsjbfb");
+            for (int i = 0; i < cp.data.Count; i++)
+            {
+                if (i > 200)
+                    System.Console.WriteLine("dsjbfb");
+                //Pair x = new Pair(cp.data[i].x, cp.data[i].y);
+                this.Enqueue(cp.data[i]);
+            }
+        }
+        public void Enqueue(Pair item)
+        {
+            if (Prev[item.x*11 + item.y]) return;
+            Prev[item.x * 11 + item.y] = true;
+            data.Add(item);
+            int ci = data.Count - 1; // child index; start at end
+            while (ci > 0)
+            {
+                int pi = (ci - 1) / 2; // parent index
+                if (data[ci].CompareTo(data[pi],pos) <= 0) break; // child item is smaller than (or equal) parent so we're done
+                Pair tmp = new Pair(data[ci].x, data[ci].y); data[ci] = data[pi]; data[pi] = tmp;
+                ci = pi;
+            }
+        }
+
+        public Pair Dequeue()
+        {
+            // assumes pq is not empty; up to calling code
+            int li = data.Count - 1; // last index (before removal)
+            Pair frontItem = new Pair(data[0].x,data[0].y);   // fetch the front
+            data[0] = data[li];
+            Prev[data[0].x * 11 + data[0].y] = false;
+            data.RemoveAt(li);
+
+            --li; // last index (after removal)
+            int pi = 0; // parent index. start at front of pq
+            while (true)
+            {
+                int ci = pi * 2 + 1; // left child index of parent
+                if (ci > li) break;  // no children so done
+                int rc = ci + 1;     // right child
+                if (rc <= li && data[rc].CompareTo(data[ci], pos) > 0) // if there is a rc (ci + 1), and it is larger than left child, use the rc instead
+                    ci = rc;
+                if (data[pi].CompareTo(data[ci], pos) >= 0) break; // parent is larger than (or equal to) largest child so done
+                Pair tmp = data[pi]; data[pi] = data[ci]; data[ci] = tmp; // swap parent and child
+                pi = ci;
+            }
+            return frontItem;
+        }
+
+        public Pair Peek()
+        {
+            Pair frontItem = new Pair(data[0].x,data[0].y);
+            return frontItem;
+        }
+
+        public int Count()
+        {
+            return data.Count;
+        }
+
+        public override string ToString()
+        {
+            string s = "";
+            for (int i = 0; i < data.Count; ++i)
+                s += data[i].ToString() + " ";
+            s += "count = " + data.Count;
+            return s;
+        }
+
+        public bool IsConsistent()
+        {
+            // is the heap property true for all data?
+            if (data.Count == 0) return true;
+            int li = data.Count - 1; // last index
+            for (int pi = 0; pi < data.Count; ++pi) // each parent index
+            {
+                int lci = 2 * pi + 1; // left child index
+                int rci = 2 * pi + 2; // right child index
+
+                if (lci <= li && data[pi].CompareTo(data[lci], pos) < 0) return false; // if lc exists and it's smaller than parent then bad.
+                if (rci <= li && data[pi].CompareTo(data[rci], pos) < 0) return false; // check the right child too.
+            }
+            return true; // passed all checks
+        } // IsConsistent
+    } // PriorityQueue
+}
