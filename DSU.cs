@@ -53,9 +53,8 @@ namespace HexGame
         }
         public void update(Pair ne, State S)
         {
-            
-            con[(ne.x * 11) + ne.y] = ConCount;
-            ConCount++;
+
+            con[(ne.x * 11) + ne.y] = ConCount++;
             Connections.Add(new Connection(C));
             Connections[con[(ne.x * 11) + ne.y]].Update(ne);
 
@@ -63,8 +62,22 @@ namespace HexGame
             List<Bridge> brd = PointBridgesOfSameColor(ne, S);
             Board x = new Board();
             //x.PrintBoardConsole(S);
-            for (int i = 0; i < adj.Count; i++) join((adj[i].x * 11) + adj[i].y, (ne.x * 11) + ne.y);
-            for (int i = 0; i < brd.Count; i++) join((brd[i].Pos.x * 11) + brd[i].Pos.y, (ne.x * 11) + ne.y);
+            for (int i = 0; i < adj.Count; i++)
+            {
+                int par1 = FindPar((adj[i].x * 11) + adj[i].y);
+                int par2 = FindPar((ne.x * 11) + ne.y);
+                if (con[par1] == con[par2] && par1 != par2)
+                    Console.WriteLine("ya5taaaaay");
+                join((adj[i].x * 11) + adj[i].y, (ne.x * 11) + ne.y);
+            }
+            for (int i = 0; i < brd.Count; i++)
+            {
+                int par1 = FindPar((brd[i].Pos.x * 11) + brd[i].Pos.y);
+                int par2 = FindPar((ne.x * 11) + ne.y);
+                if (con[par1] == con[par2] && par1 != par2)
+                    Console.WriteLine("ya5taaaaay");
+                join((brd[i].Pos.x * 11) + brd[i].Pos.y, (ne.x * 11) + ne.y);
+            }
         }
         private void join(int firs, int secs)
         {
@@ -76,10 +89,14 @@ namespace HexGame
             if (size[fir] < size[sec]) { int temp = fir; fir = sec; sec = temp; }
             size[fir] += size[sec];
             par[sec] = fir;
+            if (con[fir] == con[sec])
+                Console.WriteLine("ya5taaaaay");
             
             Connections[con[fir]].Copy(Connections[con[sec]]);
-            Connections.RemoveAt(con[sec]);
-            ConCount--;
+            
+            Connections[con[sec]].Clear();
+            
+            con[sec] = con[fir];
         }
         private int FindPar(int i)
         {
@@ -112,32 +129,38 @@ namespace HexGame
             if (x - 1 >= 0 && y - 1 >= 0 && s.BoardCell[x - 1, y - 1].OccupiedBy == C)
             {
                 X1 = new Bridge(new Pair(x - 1, y - 1), new Pair(x - 1, y), new Pair(x, y - 1));
-                Bridges.Add(X1);
+                if (s.BoardCell[X1.mids[0].x, X1.mids[0].y].OccupiedBy == 'N' && s.BoardCell[X1.mids[1].x, X1.mids[1].y].OccupiedBy == 'N')
+                    Bridges.Add(X1);
             }
             if (x - 2 >= 0 && x - 1 >= 0 && y + 1 <= 10 && s.BoardCell[x - 2, y + 1].OccupiedBy == C)
             {
                 X1 = new Bridge(new Pair(x - 2, y + 1), new Pair(x - 1, y), new Pair(x - 1, y + 1));
-                Bridges.Add(X1);
+                if (s.BoardCell[X1.mids[0].x, X1.mids[0].y].OccupiedBy == 'N' && s.BoardCell[X1.mids[1].x, X1.mids[1].y].OccupiedBy == 'N')
+                    Bridges.Add(X1);
             }
             if (x - 1 >= 0 && y + 2 <= 10 && y + 1 <= 10 && s.BoardCell[x - 1, y + 2].OccupiedBy == C)
             {
                 X1 = new Bridge(new Pair(x - 1, y + 2), new Pair(x - 1, y + 1), new Pair(x, y + 1));
-                Bridges.Add(X1);
+                if (s.BoardCell[X1.mids[0].x, X1.mids[0].y].OccupiedBy == 'N' && s.BoardCell[X1.mids[1].x, X1.mids[1].y].OccupiedBy == 'N')
+                    Bridges.Add(X1);
             }
             if (x + 1 <= 10 && y + 1 <= 10 && s.BoardCell[x + 1, y + 1].OccupiedBy == C)
             {
                 X1 = new Bridge(new Pair(x + 1, y + 1), new Pair(x, y + 1), new Pair(x + 1, y));
-                Bridges.Add(X1);
+                if (s.BoardCell[X1.mids[0].x, X1.mids[0].y].OccupiedBy == 'N' && s.BoardCell[X1.mids[1].x, X1.mids[1].y].OccupiedBy == 'N')
+                    Bridges.Add(X1);
             }
             if (x + 2 <= 10 && x + 1 <= 10 && y - 1 >= 0 && s.BoardCell[x + 2, y - 1].OccupiedBy == C)
             {
                 X1 = new Bridge(new Pair(x + 2, y - 1), new Pair(x + 1, y), new Pair(x + 1, y - 1));
-                Bridges.Add(X1);
+                if (s.BoardCell[X1.mids[0].x, X1.mids[0].y].OccupiedBy == 'N' && s.BoardCell[X1.mids[1].x, X1.mids[1].y].OccupiedBy == 'N')
+                    Bridges.Add(X1);
             }
             if (x + 1 <= 10 && y - 1 >= 0 && y - 2 >= 0 && s.BoardCell[x + 1, y - 2].OccupiedBy == C)
             {
                 X1 = new Bridge(new Pair(x + 1, y - 2), new Pair(x + 1, y - 1), new Pair(x, y - 1));
-                Bridges.Add(X1);
+                if (s.BoardCell[X1.mids[0].x, X1.mids[0].y].OccupiedBy == 'N' && s.BoardCell[X1.mids[1].x, X1.mids[1].y].OccupiedBy == 'N')
+                    Bridges.Add(X1);
             }
 
             return Bridges;

@@ -28,14 +28,21 @@ namespace HexGame
         {
             if (C == 'R')
             {
-                if (ne.x >= 5) Lower.Enqueue(ne);
-                if (ne.x <= 5) Higher.Enqueue(ne);
+                if (ne.x >= 5) { Lower.Enqueue(ne); Pair tm = Lower.Dequeue(); Lower.Enqueue(tm); }
+                if (ne.x <= 5) { Higher.Enqueue(ne); Pair tm = Higher.Dequeue(); Higher.Enqueue(tm); }
             }
             else
             {
-                if (ne.y >= 5) Lower.Enqueue(ne);
-                if (ne.y <= 5) Higher.Enqueue(ne); 
+                if (ne.y >= 5) { Lower.Enqueue(ne); Pair tm = Lower.Dequeue(); Lower.Enqueue(tm); }
+                if (ne.y <= 5) { Higher.Enqueue(ne); Pair tm = Higher.Dequeue(); Higher.Enqueue(tm); } 
             }
+        }
+        public void Clear()
+        {
+            this.Higher.data.Clear();
+            //this.Higher.Prev.Clear();
+            this.Lower.data.Clear();
+            //this.Lower.Prev.Clear();
         }
     }
 }

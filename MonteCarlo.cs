@@ -70,16 +70,22 @@ namespace HexGame
                 arr[1] = 5;
                 return arr;
             }
-            else if(initialboard.OccCells == 1 && b.swappedflag == 0)
+            else if(initialboard.OccCells == 1)
             {
-                int[] arr = new int[2];
-                arr[0] = -1;
-                arr[1] = -1;
-                b.swappedflag = 1;
-                return arr;
+                //todo swap
             }
 
             // iterations += 50;
+
+            List<Pair> Must = new List<Pair>();
+            Must =  b.MustPlay(b.P1, initialboard);
+            if(Must.Count != 0)
+            {
+                int[] arr = new int[2];
+                arr[0] = Must[0].x;
+                arr[1] = Must[0].y;
+                return arr;
+            }
 
             int iterations = 100;
             //iterations = b.HexBoard.OccCells + 200;
@@ -149,8 +155,16 @@ namespace HexGame
                     Player p2 = new Player(' ', 0);
                     p1.CopyPlayer(parent.P1);
                     p2.CopyPlayer(parent.P2);
+
                     p1.newplay(c,NewState);///
+                    
                     Node NewBorn = new Node(parent, NewState, 0, 0, 1, p1, p2);
+                    
+                    p1.Buffer.Clear();
+                    p1.SetOfConnections.Connections.Clear();
+                    p2.Buffer.Clear();
+                    p2.SetOfConnections.Connections.Clear();
+                    
                     parent.Children.Add(NewBorn);
                 }
             }
@@ -176,18 +190,27 @@ namespace HexGame
                     Player p2 = new Player(' ', 0);
                     p1.CopyPlayer(parent.P1);
                     p2.CopyPlayer(parent.P2);
+                    
                     p2.newplay(c, NewState);
+                    
                     Node NewBorn = new Node(parent, NewState, 0, 0, 0, p1, p2);
+                    
+                    p1.Buffer.Clear();
+                    p1.SetOfConnections.Connections.Clear();
+                    p2.Buffer.Clear();
+                    p2.SetOfConnections.Connections.Clear();
+                    
                     parent.Children.Add(NewBorn);
                 }
             }
+            
             foreach (Node child in parent.Children)
             {
-                //Thread my = new System.Threading.Thread(delegate()
+                Thread my = new System.Threading.Thread(delegate()
                 {
                     Simulation(child);
-                }//);
-                //my.Start();
+                });
+                my.Start();
             }
         }
 
@@ -210,6 +233,8 @@ namespace HexGame
                     //b.PrintBoardConsole(IntState);
                     List<Pair> StatesP1 = b.LegalPlays(P1, P2, IntState);
 
+                    if (StatesP1.Count == 0) b.PrintBoardConsole(IntState);
+
                     Random rnd = new Random();
                     int index = rnd.Next(0, StatesP1.Count);
                     //try
@@ -225,6 +250,7 @@ namespace HexGame
                     IntState.cord[1] = StatesP1[index].y;
 
                     Cell c = new Cell(IntState.cord[0], IntState.cord[1], P1.Color, 1);
+                    //Console.WriteLine("P1: " + c.CorX + c.CorY);
                     P1.newplay(c, IntState);
                     //}
                     //catch (Exception ex)
@@ -249,9 +275,9 @@ namespace HexGame
                 }
                 else
                 { //Hwa eli yl3b el awal
-
+                    
                     List<Pair> StatesP2 = b.LegalPlays(P2, P1, IntState);
-
+                    if(StatesP2.Count == 0) b.PrintBoardConsole(IntState);
                     Random rnd = new Random();
                     int index = rnd.Next(0, StatesP2.Count);
                     //try
@@ -266,6 +292,7 @@ namespace HexGame
                     IntState.cord[1] = StatesP2[index].y;
 
                     Cell c = new Cell(IntState.cord[0], IntState.cord[1], P2.Color, 1);
+                    //Console.WriteLine("P2: " + c.CorX + c.CorY);
                     P2.newplay(c, IntState);
                     //}
                     //catch (Exception ex)
@@ -292,6 +319,7 @@ namespace HexGame
 
         public void BackPropagation(int WinOrLose, Node CurrentNode)
         {
+            //Console.WriteLine("\n\n");
             while (CurrentNode != null)
             {
                 CurrentNode.visits++;

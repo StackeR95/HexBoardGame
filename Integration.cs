@@ -47,14 +47,14 @@ namespace HexGame
                 MyBoard.P1 = new Player('R', 1);
                 MyBoard.P2 = new Player('B', 2);
             }
-            
+
 
             while (true)
             {
                 if (turn == 1)
                 {
-                    //Send to MonteCarlo Board state
-                    AgentAgain:
+                //Send to MonteCarlo Board state
+                AgentAgain:
 
                     //Run agent
                     MyPlay = MyAgent.runalgo(MyBoard.HexBoard);
@@ -67,7 +67,7 @@ namespace HexGame
                     else
                     {
                         Cell c = MyBoard.UpdateMyBoard(MyPlay[0], MyPlay[1], MyBoard.P1, ref MyBoard.HexBoard);
-                      
+
                         if (c == null)
                         {
                             Console.WriteLine("Cell out of range or Occupied(Agent).");
@@ -79,7 +79,7 @@ namespace HexGame
 
                         //Check if it won
 
-                        MyBoard.PrintBoardConsole(MyBoard.HexBoard);
+                        //MyBoard.PrintBoardConsole(MyBoard.HexBoard);
                         int p1 = MyBoard.Winner(ref MyBoard.P1, ref MyBoard.HexBoard);
                         if (MyBoard.P1.num == p1)
                         {
@@ -108,8 +108,8 @@ namespace HexGame
                     //-------------------------------------------------------------------------------------      
                     if (swap == "" || swap == "n")
                     {
-                        //P2 will play
-                        OpponentAgain:
+                    //P2 will play
+                    OpponentAgain:
                         Console.WriteLine("P2 is playing");
                         Console.WriteLine("Choose your cell (x & y): ");
                         Console.Write("X: ");
@@ -122,7 +122,7 @@ namespace HexGame
                             Console.WriteLine("Cell out of range(P2).");
                             goto OpponentAgain;
                         }
-                     
+
 
                         MyBoard.P2.newplay(c2, MyBoard.HexBoard);
                         int p = MyBoard.Winner(ref MyBoard.P2, ref MyBoard.HexBoard);
