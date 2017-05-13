@@ -16,7 +16,7 @@ namespace HexGame
         public DSU(char C)
         {
             this.C = C;
-            
+
             par = new int[11 * 11];
             size = new int[11 * 11];
             con = new int[11 * 11];
@@ -61,21 +61,17 @@ namespace HexGame
             List<Pair> adj = GetAdjacentOfSameColor(ne, S);
             List<Bridge> brd = PointBridgesOfSameColor(ne, S);
             Board x = new Board();
-
+            //x.PrintBoardConsole(S);
             for (int i = 0; i < adj.Count; i++)
             {
                 int par1 = FindPar((adj[i].x * 11) + adj[i].y);
                 int par2 = FindPar((ne.x * 11) + ne.y);
-                if (con[par1] == con[par2] && par1 != par2)
-                    Console.WriteLine("ya5taaaaay");
                 join((adj[i].x * 11) + adj[i].y, (ne.x * 11) + ne.y);
             }
             for (int i = 0; i < brd.Count; i++)
             {
                 int par1 = FindPar((brd[i].Pos.x * 11) + brd[i].Pos.y);
                 int par2 = FindPar((ne.x * 11) + ne.y);
-                if (con[par1] == con[par2] && par1 != par2)
-                    Console.WriteLine("ya5taaaaay");
                 join((brd[i].Pos.x * 11) + brd[i].Pos.y, (ne.x * 11) + ne.y);
             }
         }
@@ -83,24 +79,19 @@ namespace HexGame
         {
             int fir = FindPar(firs);
             int sec = FindPar(secs);
-            if (con[sec] >= ConCount || con[fir] >= ConCount)
-                System.Console.WriteLine("yade el nela");
             if (fir == sec) return;
             if (size[fir] < size[sec]) { int temp = fir; fir = sec; sec = temp; }
             size[fir] += size[sec];
             par[sec] = fir;
-            if (con[fir] == con[sec])
-                Console.WriteLine("ya5taaaaay");
-            
             Connections[con[fir]].Copy(Connections[con[sec]]);
-            
+
             Connections[con[sec]].Clear();
-            
+
             con[sec] = con[fir];
         }
         private int FindPar(int i)
         {
-            if(i == par[i])return i; 
+            if (i == par[i]) return i;
             return par[i] = FindPar(par[i]);
         }
         private List<Pair> GetAdjacentOfSameColor(Pair P, State s)
