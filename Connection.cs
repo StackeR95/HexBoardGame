@@ -26,16 +26,8 @@ namespace HexGame
         }
         public void Update(Pair ne)
         {
-            if (C == 'R')
-            {
-                if (ne.x >= 5) { Lower.Enqueue(ne); Pair tm = Lower.Dequeue(); Lower.Enqueue(tm); }
-                if (ne.x <= 5) { Higher.Enqueue(ne); Pair tm = Higher.Dequeue(); Higher.Enqueue(tm); }
-            }
-            else
-            {
-                if (ne.y >= 5) { Lower.Enqueue(ne); Pair tm = Lower.Dequeue(); Lower.Enqueue(tm); }
-                if (ne.y <= 5) { Higher.Enqueue(ne); Pair tm = Higher.Dequeue(); Higher.Enqueue(tm); } 
-            }
+            Lower.Enqueue(ne);
+            Higher.Enqueue(ne);
         }
         public void Clear()
         {

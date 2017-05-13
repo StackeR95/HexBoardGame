@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Threading;
-
+using System.Diagnostics;
 namespace HexGame
 {
 
@@ -40,10 +39,12 @@ namespace HexGame
         //Global Section
         public Node myTree; //Contains root of tree
         Board b;
+        Stopwatch Timer;
         private System.Object lockthis = new System.Object();
         /////////////////////
         public MonteCarlo(Board bbb) {
             b = bbb;
+            Timer = new Stopwatch();
 
         }
 
@@ -84,9 +85,13 @@ namespace HexGame
                 return arr;
             }
 
-            int iterations = 100;
+            int iterations = 1000;
+
+            Timer.Start();
+
             while (true)
             {
+                if (Timer.ElapsedMilliseconds > (b.P1.NumofCellsPlayed + 1) * 40 * 1000) break;
 
                 Node selectednode;
                 selectednode = Selection(myTree); //Choose highest child which hava best UCB
@@ -96,6 +101,8 @@ namespace HexGame
                 if (iterations == 0) break;
 
             }
+
+            Timer.Stop();
 
             Node myNextState = null;
             myNextState = HighestUCB(myTree); //Return best child/move for tree root
@@ -148,8 +155,8 @@ namespace HexGame
                     p1.CopyPlayer(parent.P1);
                     p2.CopyPlayer(parent.P2);
 
-                    p1.newplay(c,NewState);///
-                    
+                    p1.newplay(c, NewState);///
+
                     Node NewBorn = new Node(parent, NewState, 0, 0, 1, p1, p2);
                     
                     p1.Buffer.Clear();
@@ -207,7 +214,7 @@ namespace HexGame
         }
 
         public void Simulation(Node node) //Run simulation on a node and update it's values
-        { 
+        {
             State IntState = new State();
             IntState.CopyState(node.MyState);
             Player P1 = new Player(' ', 0); // bymasili ana (machine)
@@ -221,11 +228,14 @@ namespace HexGame
             {
                 if (turn == 0)
                 {
-                    
+
                     List<Pair> StatesP1 = b.LegalPlays(P1, P2, IntState);
 
-                    if (StatesP1.Count == 0) b.PrintBoardConsole(IntState);
-
+                    if (StatesP1.Count == 0)
+                    {
+                        b.PrintBoardConsole(IntState);
+                        StatesP1 = b.LegalPlays(P1, P2, IntState);
+                    }
                     Random rnd = new Random();
                     int index = rnd.Next(0, StatesP1.Count);
                     IntState.BoardCell[StatesP1[index].x, StatesP1[index].y].OccupiedBy = P1.Color;
@@ -239,27 +249,35 @@ namespace HexGame
 
                     Cell c = new Cell(IntState.cord[0], IntState.cord[1], P1.Color, 1);
                     P1.newplay(c, IntState);
-                    
-                        int p1;
-                        p1 = b.Winner(ref P1, ref IntState);
-                        if (P1.num == p1)
-                        {
-                            lock (lockthis)
-                            {
-                                BackPropagation(10, node);
 
-                                return;
-                            }
+                    int p1;
+                    p1 = b.Winner(ref P1, ref IntState);
+                    List<Pair> x = new List<Pair>();
+                    if(P1.num != p1)
+                        x = b.MustConnect(P1, IntState);
+
+                    if (P1.num == p1 || x.Count != 0)
+                    {
+                        lock (lockthis)
+                        {
+                            BackPropagation(1, node);
+
+                            return;
                         }
-                    
+                    }
+
                     turn = 1;
 
                 }
                 else
                 { //Hwa eli yl3b el awal
-                    
+
                     List<Pair> StatesP2 = b.LegalPlays(P2, P1, IntState);
-                    if(StatesP2.Count == 0) b.PrintBoardConsole(IntState);
+                    if (StatesP2.Count == 0)
+                    {
+                        b.PrintBoardConsole(IntState);
+                        StatesP2 = b.LegalPlays(P2, P1, IntState);
+                    }
                     Random rnd = new Random();
                     int index = rnd.Next(0, StatesP2.Count);
                     IntState.BoardCell[StatesP2[index].x, StatesP2[index].y].OccupiedBy = P2.Color;
@@ -273,17 +291,21 @@ namespace HexGame
 
                     Cell c = new Cell(IntState.cord[0], IntState.cord[1], P2.Color, 1);
                     P2.newplay(c, IntState);
-                        int p2 = b.Winner(ref P2, ref IntState);
-                        if (P2.num == p2)
-                        {
-                            lock (lockthis)
-                            {
-                                BackPropagation(-5, node);
+                    int p2 = b.Winner(ref P2, ref IntState);
+                    List<Pair> x = new List<Pair>();
+                    if (P2.num != p2)
+                        x = b.MustConnect(P2, IntState);
 
-                                return;
-                            }
+                    if (P2.num == p2 || x.Count != 0)
+                    {
+                        lock (lockthis)
+                        {
+                            BackPropagation(0, node);
+
+                            return;
                         }
-                    
+                    }
+
                     turn = 0;
                 }
 
@@ -322,7 +344,7 @@ namespace HexGame
             //ni: the number of visits of node
             //N: the total number of visits
             if (ni == 0) return double.PositiveInfinity;
-            else return (vi / ni) + (0.4 * (Math.Sqrt(Math.Log(N) / ni)));
+            else return (vi / ni) + (0.5 * (Math.Sqrt(Math.Log(N) / ni)));
         }
 
     

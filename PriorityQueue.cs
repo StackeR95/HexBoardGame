@@ -19,26 +19,22 @@ namespace HexGame
         }
         public void Copy(PriorityQueue cp)
         {
-            if (cp.data.Count > 100)
-                System.Console.WriteLine("dsjbfb");
             for (int i = 0; i < cp.data.Count; i++)
             {
-                if (i > 200)
-                    System.Console.WriteLine("dsjbfb");
-                //Pair x = new Pair(cp.data[i].x, cp.data[i].y);
                 this.Enqueue(cp.data[i]);
             }
         }
         public void Enqueue(Pair item)
         {
-            if (Prev[item.x*11 + item.y]) return;
+            if (Prev[item.x * 11 + item.y]) return;
+            
             Prev[item.x * 11 + item.y] = true;
-            data.Add(item);
+            data.Add(new Pair(item.x,item.y));
             int ci = data.Count - 1; // child index; start at end
             while (ci > 0)
             {
                 int pi = (ci - 1) / 2; // parent index
-                if (data[ci].CompareTo(data[pi],pos) <= 0) break; // child item is smaller than (or equal) parent so we're done
+                if (data[ci].CompareTo(data[pi], pos) <= 0) break; // child item is smaller than (or equal) parent so we're done
                 Pair tmp = new Pair(data[ci].x, data[ci].y); data[ci] = data[pi]; data[pi] = tmp;
                 ci = pi;
             }
@@ -48,9 +44,9 @@ namespace HexGame
         {
             // assumes pq is not empty; up to calling code
             int li = data.Count - 1; // last index (before removal)
-            Pair frontItem = new Pair(data[0].x,data[0].y);   // fetch the front
-            data[0] = data[li];
+            Pair frontItem = new Pair(data[0].x, data[0].y);   // fetch the front
             Prev[data[0].x * 11 + data[0].y] = false;
+            data[0] = data[li];
             data.RemoveAt(li);
 
             --li; // last index (after removal)
@@ -71,7 +67,7 @@ namespace HexGame
 
         public Pair Peek()
         {
-            Pair frontItem = new Pair(data[0].x,data[0].y);
+            Pair frontItem = new Pair(data[0].x, data[0].y);
             return frontItem;
         }
 
@@ -80,29 +76,7 @@ namespace HexGame
             return data.Count;
         }
 
-        public override string ToString()
-        {
-            string s = "";
-            for (int i = 0; i < data.Count; ++i)
-                s += data[i].ToString() + " ";
-            s += "count = " + data.Count;
-            return s;
-        }
 
-        public bool IsConsistent()
-        {
-            // is the heap property true for all data?
-            if (data.Count == 0) return true;
-            int li = data.Count - 1; // last index
-            for (int pi = 0; pi < data.Count; ++pi) // each parent index
-            {
-                int lci = 2 * pi + 1; // left child index
-                int rci = 2 * pi + 2; // right child index
 
-                if (lci <= li && data[pi].CompareTo(data[lci], pos) < 0) return false; // if lc exists and it's smaller than parent then bad.
-                if (rci <= li && data[pi].CompareTo(data[rci], pos) < 0) return false; // check the right child too.
-            }
-            return true; // passed all checks
-        } // IsConsistent
     } // PriorityQueue
 }
