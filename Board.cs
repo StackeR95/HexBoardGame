@@ -304,12 +304,15 @@ namespace HexGame
                             down.y - 1 >= 0 && Cur.BoardCell[down.x + 1, down.y - 1].OccupiedBy == 'N'))))
                         {
                             Connection tmp = new Connection(P.Color);
-                            for (int j = 0; j < P.SetOfConnections.Connections[i].Higher.data.Count; j++)
+                            while (P.SetOfConnections.Connections[i].Higher.Count() != 0)
                             {
                                 Pair tx = P.SetOfConnections.Connections[i].Higher.Dequeue();
                                 tmp.Higher.Enqueue(tx);
                                 if (tx.x == 1)
                                 {
+                                    if (Cur.BoardCell[tx.x - 1, tx.y].OccupiedBy != 'N') continue;
+                                    if (tx.y + 1 <= 10 && Cur.BoardCell[tx.x - 1, tx.y + 1].OccupiedBy != 'N') continue;
+
                                     if (Cur.BoardCell[tx.x - 1, tx.y].OccupiedBy == 'N')
                                         Must.Add(new Pair(tx.x - 1, tx.y));
 
@@ -323,23 +326,30 @@ namespace HexGame
                                     {
                                         if (Cur.BoardCell[brd[k].Pos.x, brd[k].Pos.y].OccupiedBy == P.Color)
                                         {
-                                            Must.Add(new Pair(brd[k].mids[0].x, brd[k].mids[0].y));
-                                            Must.Add(new Pair(brd[k].mids[1].x, brd[k].mids[1].y));
+                                            if (Cur.BoardCell[brd[k].mids[0].x, brd[k].mids[0].y].OccupiedBy != 'N') continue;
+                                            if (Cur.BoardCell[brd[k].mids[1].x, brd[k].mids[1].y].OccupiedBy != 'N') continue;
+
+                                            if (Cur.BoardCell[brd[k].mids[0].x, brd[k].mids[0].y].OccupiedBy == 'N') Must.Add(new Pair(brd[k].mids[0].x, brd[k].mids[0].y));
+                                            if (Cur.BoardCell[brd[k].mids[1].x, brd[k].mids[1].y].OccupiedBy == 'N') Must.Add(new Pair(brd[k].mids[1].x, brd[k].mids[1].y));
                                         }
                                     }
                                 }
                             }
-                            for (int j = 0; j < P.SetOfConnections.Connections[i].Lower.data.Count; j++)
+                            while (P.SetOfConnections.Connections[i].Lower.Count() != 0)
                             {
                                 Pair tx = P.SetOfConnections.Connections[i].Lower.Dequeue();
                                 tmp.Lower.Enqueue(tx);
                                 if (tx.x == 9)
                                 {
+                                    if (Cur.BoardCell[tx.x + 1, tx.y].OccupiedBy != 'N') continue;
+                                    if (tx.y - 1 >= 0 && Cur.BoardCell[tx.x + 1, tx.y - 1].OccupiedBy != 'N') continue;
+
                                     if (Cur.BoardCell[tx.x + 1, tx.y].OccupiedBy == 'N')
                                         Must.Add(new Pair(tx.x + 1, tx.y));
-
+                                    
                                     if (tx.y - 1 >= 0 && Cur.BoardCell[tx.x + 1, tx.y - 1].OccupiedBy == 'N')
                                         Must.Add(new Pair(tx.x + 1, tx.y - 1));
+                                    
                                 }
                                 else
                                 {
@@ -348,21 +358,25 @@ namespace HexGame
                                     {
                                         if (Cur.BoardCell[brd[k].Pos.x, brd[k].Pos.y].OccupiedBy == P.Color)
                                         {
-                                            Must.Add(new Pair(brd[k].mids[0].x, brd[k].mids[0].y));
-                                            Must.Add(new Pair(brd[k].mids[1].x, brd[k].mids[1].y));
+                                            if (Cur.BoardCell[brd[k].mids[0].x, brd[k].mids[0].y].OccupiedBy != 'N') continue;
+                                            if (Cur.BoardCell[brd[k].mids[1].x, brd[k].mids[1].y].OccupiedBy != 'N') continue;
+
+                                            if (Cur.BoardCell[brd[k].mids[0].x, brd[k].mids[0].y].OccupiedBy == 'N') Must.Add(new Pair(brd[k].mids[0].x, brd[k].mids[0].y));
+                                            if (Cur.BoardCell[brd[k].mids[1].x, brd[k].mids[1].y].OccupiedBy == 'N') Must.Add(new Pair(brd[k].mids[1].x, brd[k].mids[1].y));
                                         }
                                     }
                                 }
                             }
                             // todo enqueue the connection again
-                            for (int j = 0; j < tmp.Higher.data.Count; j++)
-                            {
-                                P.SetOfConnections.Connections[i].Higher.Enqueue(tmp.Higher.Dequeue());
-                            }
-                            for (int j = 0; j < tmp.Lower.data.Count; j++)
-                            {
-                                P.SetOfConnections.Connections[i].Lower.Enqueue(tmp.Lower.Dequeue());
-                            }
+                            //for (int j = 0; j < tmp.Higher.data.Count; j++)
+                            //{
+                            //    P.SetOfConnections.Connections[i].Higher.Enqueue(tmp.Higher.Dequeue());
+                            //}
+                            //for (int j = 0; j < tmp.Lower.data.Count; j++)
+                            //{
+                            //    P.SetOfConnections.Connections[i].Lower.Enqueue(tmp.Lower.Dequeue());
+                            //}
+                            P.SetOfConnections.Connections[i].Copy(tmp);
                         }
                     }
                 }
@@ -379,15 +393,18 @@ namespace HexGame
                             right.x - 1 >= 0 && Cur.BoardCell[right.x - 1, right.y + 1].OccupiedBy == 'N'))))
                         {
                             Connection tmp = new Connection(P.Color);
-                            for (int j = 0; j < P.SetOfConnections.Connections[i].Higher.data.Count; j++)
+                            while (P.SetOfConnections.Connections[i].Higher.Count() != 0)
                             {
                                 Pair tx = P.SetOfConnections.Connections[i].Higher.Dequeue();
                                 tmp.Higher.Enqueue(tx);
                                 if (tx.y == 1)
                                 {
+                                    if (Cur.BoardCell[tx.x, tx.y - 1].OccupiedBy != 'N') continue;
+                                    if (tx.x + 1 <= 10 && Cur.BoardCell[tx.x + 1, tx.y - 1].OccupiedBy != 'N') continue;
+
                                     if (Cur.BoardCell[tx.x, tx.y - 1].OccupiedBy == 'N')
                                         Must.Add(new Pair(tx.x, tx.y - 1));
-
+                                   
                                     if (tx.x + 1 <= 10 && Cur.BoardCell[tx.x + 1, tx.y - 1].OccupiedBy == 'N')
                                         Must.Add(new Pair(tx.x + 1, tx.y - 1));
                                 }
@@ -398,21 +415,27 @@ namespace HexGame
                                     {
                                         if (Cur.BoardCell[brd[k].Pos.x, brd[k].Pos.y].OccupiedBy == P.Color)
                                         {
-                                            Must.Add(new Pair(brd[k].mids[0].x, brd[k].mids[0].y));
-                                            Must.Add(new Pair(brd[k].mids[1].x, brd[k].mids[1].y));
+                                            if (Cur.BoardCell[brd[k].mids[0].x, brd[k].mids[0].y].OccupiedBy != 'N') continue;
+                                            if (Cur.BoardCell[brd[k].mids[1].x, brd[k].mids[1].y].OccupiedBy != 'N') continue;
+
+                                            if (Cur.BoardCell[brd[k].mids[1].x, brd[k].mids[1].y].OccupiedBy == 'N') Must.Add(new Pair(brd[k].mids[0].x, brd[k].mids[0].y));
+                                            if (Cur.BoardCell[brd[k].mids[1].x, brd[k].mids[1].y].OccupiedBy == 'N') Must.Add(new Pair(brd[k].mids[1].x, brd[k].mids[1].y));
                                         }
                                     }
                                 }
                             }
-                            for (int j = 0; j < P.SetOfConnections.Connections[i].Lower.data.Count; j++)
+                            while (P.SetOfConnections.Connections[i].Lower.Count() != 0)
                             {
                                 Pair tx = P.SetOfConnections.Connections[i].Lower.Dequeue();
                                 tmp.Lower.Enqueue(tx);
                                 if (tx.y == 9)
                                 {
+                                    if (Cur.BoardCell[tx.x, tx.y + 1].OccupiedBy != 'N') continue;
+                                    if (tx.x - 1 >= 0 && Cur.BoardCell[tx.x - 1, tx.y + 1].OccupiedBy != 'N') continue;
+
                                     if (Cur.BoardCell[tx.x, tx.y + 1].OccupiedBy == 'N')
                                         Must.Add(new Pair(tx.x, tx.y + 1));
-
+                                    
                                     if (tx.x - 1 >= 0 && Cur.BoardCell[tx.x - 1, tx.y + 1].OccupiedBy == 'N')
                                         Must.Add(new Pair(tx.x - 1, tx.y + 1));
                                 }
@@ -423,21 +446,25 @@ namespace HexGame
                                     {
                                         if (Cur.BoardCell[brd[k].Pos.x, brd[k].Pos.y].OccupiedBy == P.Color)
                                         {
-                                            Must.Add(new Pair(brd[k].mids[0].x, brd[k].mids[0].y));
-                                            Must.Add(new Pair(brd[k].mids[1].x, brd[k].mids[1].y));
+                                            if (Cur.BoardCell[brd[k].mids[0].x, brd[k].mids[0].y].OccupiedBy != 'N') continue;
+                                            if (Cur.BoardCell[brd[k].mids[1].x, brd[k].mids[1].y].OccupiedBy != 'N') continue;
+
+                                            if (Cur.BoardCell[brd[k].mids[1].x, brd[k].mids[1].y].OccupiedBy == 'N') Must.Add(new Pair(brd[k].mids[0].x, brd[k].mids[0].y));
+                                            if (Cur.BoardCell[brd[k].mids[1].x, brd[k].mids[1].y].OccupiedBy == 'N') Must.Add(new Pair(brd[k].mids[1].x, brd[k].mids[1].y));
                                         }
                                     }
                                 }
                             }
                             // todo enqueue the connection again
-                            for (int j = 0; j < tmp.Higher.data.Count; j++)
-                            {
-                                P.SetOfConnections.Connections[i].Higher.Enqueue(tmp.Higher.Dequeue());
-                            }
-                            for (int j = 0; j < tmp.Lower.data.Count; j++)
-                            {
-                                P.SetOfConnections.Connections[i].Lower.Enqueue(tmp.Lower.Dequeue());
-                            }
+                            //for (int j = 0; j < tmp.Higher.data.Count; j++)
+                            //{
+                            //    P.SetOfConnections.Connections[i].Higher.Enqueue(tmp.Higher.Dequeue());
+                            //}
+                            //for (int j = 0; j < tmp.Lower.data.Count; j++)
+                            //{
+                            //    P.SetOfConnections.Connections[i].Lower.Enqueue(tmp.Lower.Dequeue());
+                            //}
+                            P.SetOfConnections.Connections[i].Copy(tmp);
                         }
                     }
                 }
