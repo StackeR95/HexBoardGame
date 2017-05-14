@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Collections;
+
 namespace HexGame
 {
     //--------------------------------------------------------UTILITY CLASSES-------------------------------------------------------------//
@@ -12,9 +12,6 @@ namespace HexGame
         public Cell[,] BoardCell; //2d array of cells, instance of board
         public int[] cord; //most-recently occupied cells
         public int OccCells;
-        
-        
-        
         public State()
         {
             OccCells = 0;
@@ -73,9 +70,6 @@ namespace HexGame
         public int NumofCellsPlayed; //No. of cells player has played
         public Cell[] PlayerCells; //Cells the player played
         public List<Cell> Buffer;
-
-        public DSU SetOfConnections;
-
         public Player(char C, int N)
         {
             Color = C;
@@ -83,7 +77,6 @@ namespace HexGame
             NumofCellsPlayed = 0;
             PlayerCells = new Cell[62];
             Buffer = new List<Cell>();
-            SetOfConnections = new DSU(C);
         }
 
         public void CopyPlayer(Player p)
@@ -93,8 +86,6 @@ namespace HexGame
             NumofCellsPlayed = p.NumofCellsPlayed;
             PlayerCells = new Cell[62];
 
-            SetOfConnections.Copy(p.SetOfConnections);
-            
             for (int i = 0; i < p.Buffer.Count; i++)
             {
                 Cell c = new Cell(p.Buffer[i].CorX, p.Buffer[i].CorY, p.Buffer[i].OccupiedBy, p.Buffer[i].flag);
@@ -107,25 +98,19 @@ namespace HexGame
             }
 
         }
-        public void newplay(Cell C, State MyStat)
-        {
-            this.Buffer.Add(C);
-            this.NumofCellsPlayed++;
-            this.PlayerCells[this.NumofCellsPlayed - 1] = C;
-            SetOfConnections.update(new Pair(C.CorX, C.CorY), MyStat);
-        }
     }
     //------------------------------------------------------------------------------------------------------------------------------------//
     public class Board
     {
+        public stack MySt; //Stack
         public Player P1; //Player 1 representing me (my agent)
         public Player P2; //Player 2 representing the other player
         public State HexBoard; //My main game board
-        public int swappedflag = 0; //If swapped applied
+
 
         //------------------------------------------------Utitlity Functions of Board--------------------------------------------------------//
         //Only used implicitly in Board functions, aren't used by anything outside the board
-        private int CheckNeighbours(Cell c, ref Player P, ref State s, ref stack MySt)
+        private int CheckNeighbours(Cell c, ref Player P, ref State s)
         {
             int i = c.CorX;
             int j = c.CorY;
@@ -181,7 +166,7 @@ namespace HexGame
             while (PopCounter > 0)
             {
                 PopCounter--;
-                if (CheckNeighbours(MySt.C[MySt.top], ref P, ref s, ref MySt) == 24)
+                if (CheckNeighbours(MySt.C[MySt.top], ref P, ref s) == 24)
                 {
                     while (MySt.top > 0)
                         MySt.Pop();
@@ -213,37 +198,22 @@ namespace HexGame
             HexBoard = new State();
             P1 = new Player('R', 1);
             P2 = new Player('B', 2);
-            
+            MySt = new stack();
         }
 
          
         public void SwapAtFirstTurn()
         {
-            /////////////////////////////// PRIORITY QUEUES WILL EXCHANGE DATA ////////////////////////////
-            int p1num = P1.num;
-            int p2num = P2.num;
+            P1.Color = 'B';
+            P2.Color = 'R';
 
 
-            Player tB = new Player('B', 0);
-            Player tR = new Player('R', 0);
+            P2.NumofCellsPlayed++;
+            P2.PlayerCells[P2.NumofCellsPlayed - 1] = P1.PlayerCells[0];
+            P1.PlayerCells[0] = null;
+            P1.NumofCellsPlayed--;
 
-            if (P1.Color == 'R')
-            {
-                tR.CopyPlayer(P1);
-                tB.CopyPlayer(P2);
-                P1 = tB;
-                P2 = tR;
-            }
-            else
-            {
-                tR.CopyPlayer(P2);
-                tB.CopyPlayer(P1);
-                P1 = tR;
-                P2 = tB;
-            }
-            
-            P1.num = p1num;
-            P2.num = p2num;
+            HexBoard.BoardCell[HexBoard.cord[0], HexBoard.cord[1]].OccupiedBy = P2.Color;
         }
 
         public List<Bridge> PointBridges(Pair Po)
@@ -286,164 +256,6 @@ namespace HexGame
             return Bridges;
 
         }
-
-        public List<Pair> MustConnect(Player P,State Cur)
-        {
-            char Pcolor = P.Color;
-            List<Pair> Must = new List<Pair>();
-            for (int i = 0; i < P.SetOfConnections.ConCount; i++)
-            {
-                if (P.Color == 'R' && P.SetOfConnections.Connections[i].Higher.data.Count != 0 && P.SetOfConnections.Connections[i].Lower.data.Count != 0)
-                {
-                    Pair up = P.SetOfConnections.Connections[i].Higher.Peek();
-                    Pair down = P.SetOfConnections.Connections[i].Lower.Peek();
-                    if (up.x == 0 || (up.x == 1 && (Cur.BoardCell[up.x - 1, up.y].OccupiedBy == 'N' || (
-                        up.y + 1 <= 10 && Cur.BoardCell[up.x - 1, up.y + 1].OccupiedBy == 'N'))))
-                    {
-                        if (down.x == 10 || (down.x == 9 && (Cur.BoardCell[down.x + 1, down.y].OccupiedBy == 'N' || (
-                            down.y - 1 >= 0 && Cur.BoardCell[down.x + 1, down.y - 1].OccupiedBy == 'N'))))
-                        {
-                            Connection tmp = new Connection(P.Color);
-                            for (int j = 0; j < P.SetOfConnections.Connections[i].Higher.data.Count; j++)
-                            {
-                                Pair tx = P.SetOfConnections.Connections[i].Higher.Dequeue();
-                                tmp.Higher.Enqueue(tx);
-                                if (tx.x == 1)
-                                {
-                                    if (Cur.BoardCell[tx.x - 1, tx.y].OccupiedBy == 'N')
-                                        Must.Add(new Pair(tx.x - 1, tx.y));
-
-                                    if (tx.y + 1 <= 10 && Cur.BoardCell[tx.x - 1, tx.y + 1].OccupiedBy == 'N')
-                                        Must.Add(new Pair(tx.x - 1, tx.y + 1));
-                                }
-                                else
-                                {
-                                    List<Bridge> brd = PointBridges(new Pair(tx.x, tx.y));
-                                    for (int k = 0; k < brd.Count; k++)
-                                    {
-                                        if (Cur.BoardCell[brd[k].Pos.x, brd[k].Pos.y].OccupiedBy == P.Color)
-                                        {
-                                            Must.Add(new Pair(brd[k].mids[0].x, brd[k].mids[0].y));
-                                            Must.Add(new Pair(brd[k].mids[1].x, brd[k].mids[1].y));
-                                        }
-                                    }
-                                }
-                            }
-                            for (int j = 0; j < P.SetOfConnections.Connections[i].Lower.data.Count; j++)
-                            {
-                                Pair tx = P.SetOfConnections.Connections[i].Lower.Dequeue();
-                                tmp.Lower.Enqueue(tx);
-                                if (tx.x == 9)
-                                {
-                                    if (Cur.BoardCell[tx.x + 1, tx.y].OccupiedBy == 'N')
-                                        Must.Add(new Pair(tx.x + 1, tx.y));
-
-                                    if (tx.y - 1 >= 0 && Cur.BoardCell[tx.x + 1, tx.y - 1].OccupiedBy == 'N')
-                                        Must.Add(new Pair(tx.x + 1, tx.y - 1));
-                                }
-                                else
-                                {
-                                    List<Bridge> brd = PointBridges(new Pair(tx.x, tx.y));
-                                    for (int k = 0; k < brd.Count; k++)
-                                    {
-                                        if (Cur.BoardCell[brd[k].Pos.x, brd[k].Pos.y].OccupiedBy == P.Color)
-                                        {
-                                            Must.Add(new Pair(brd[k].mids[0].x, brd[k].mids[0].y));
-                                            Must.Add(new Pair(brd[k].mids[1].x, brd[k].mids[1].y));
-                                        }
-                                    }
-                                }
-                            }
-                            // todo enqueue the connection again
-                            for (int j = 0; j < tmp.Higher.data.Count; j++)
-                            {
-                                P.SetOfConnections.Connections[i].Higher.Enqueue(tmp.Higher.Dequeue());
-                            }
-                            for (int j = 0; j < tmp.Lower.data.Count; j++)
-                            {
-                                P.SetOfConnections.Connections[i].Lower.Enqueue(tmp.Lower.Dequeue());
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    if (P.SetOfConnections.Connections[i].Higher.data.Count == 0 || P.SetOfConnections.Connections[i].Lower.data.Count == 0)
-                        continue;
-                    Pair left = P.SetOfConnections.Connections[i].Higher.Peek();
-                    Pair right = P.SetOfConnections.Connections[i].Lower.Peek();
-                    if (left.y == 0 || (left.y == 1 && (Cur.BoardCell[left.x, left.y - 1].OccupiedBy == 'N' || (
-                        left.x + 1 <= 10 && Cur.BoardCell[left.x + 1, left.y - 1].OccupiedBy == 'N'))))
-                    {
-                        if (right.y == 10 || (right.y == 9 && (Cur.BoardCell[right.x, right.y + 1].OccupiedBy == 'N' || (
-                            right.x - 1 >= 0 && Cur.BoardCell[right.x - 1, right.y + 1].OccupiedBy == 'N'))))
-                        {
-                            Connection tmp = new Connection(P.Color);
-                            for (int j = 0; j < P.SetOfConnections.Connections[i].Higher.data.Count; j++)
-                            {
-                                Pair tx = P.SetOfConnections.Connections[i].Higher.Dequeue();
-                                tmp.Higher.Enqueue(tx);
-                                if (tx.y == 1)
-                                {
-                                    if (Cur.BoardCell[tx.x, tx.y - 1].OccupiedBy == 'N')
-                                        Must.Add(new Pair(tx.x, tx.y - 1));
-
-                                    if (tx.x + 1 <= 10 && Cur.BoardCell[tx.x + 1, tx.y - 1].OccupiedBy == 'N')
-                                        Must.Add(new Pair(tx.x + 1, tx.y - 1));
-                                }
-                                else
-                                {
-                                    List<Bridge> brd = PointBridges(new Pair(tx.x, tx.y));
-                                    for (int k = 0; k < brd.Count; k++)
-                                    {
-                                        if (Cur.BoardCell[brd[k].Pos.x, brd[k].Pos.y].OccupiedBy == P.Color)
-                                        {
-                                            Must.Add(new Pair(brd[k].mids[0].x, brd[k].mids[0].y));
-                                            Must.Add(new Pair(brd[k].mids[1].x, brd[k].mids[1].y));
-                                        }
-                                    }
-                                }
-                            }
-                            for (int j = 0; j < P.SetOfConnections.Connections[i].Lower.data.Count; j++)
-                            {
-                                Pair tx = P.SetOfConnections.Connections[i].Lower.Dequeue();
-                                tmp.Lower.Enqueue(tx);
-                                if (tx.y == 9)
-                                {
-                                    if (Cur.BoardCell[tx.x, tx.y + 1].OccupiedBy == 'N')
-                                        Must.Add(new Pair(tx.x, tx.y + 1));
-
-                                    if (tx.x - 1 >= 0 && Cur.BoardCell[tx.x - 1, tx.y + 1].OccupiedBy == 'N')
-                                        Must.Add(new Pair(tx.x - 1, tx.y + 1));
-                                }
-                                else
-                                {
-                                    List<Bridge> brd = PointBridges(new Pair(tx.x, tx.y));
-                                    for (int k = 0; k < brd.Count; k++)
-                                    {
-                                        if (Cur.BoardCell[brd[k].Pos.x, brd[k].Pos.y].OccupiedBy == P.Color)
-                                        {
-                                            Must.Add(new Pair(brd[k].mids[0].x, brd[k].mids[0].y));
-                                            Must.Add(new Pair(brd[k].mids[1].x, brd[k].mids[1].y));
-                                        }
-                                    }
-                                }
-                            }
-                            // todo enqueue the connection again
-                            for (int j = 0; j < tmp.Higher.data.Count; j++)
-                            {
-                                P.SetOfConnections.Connections[i].Higher.Enqueue(tmp.Higher.Dequeue());
-                            }
-                            for (int j = 0; j < tmp.Lower.data.Count; j++)
-                            {
-                                P.SetOfConnections.Connections[i].Lower.Enqueue(tmp.Lower.Dequeue());
-                            }
-                        }
-                    }
-                }
-            }
-            return Must;
-        }
         public List<Pair> MustPlay(Player P, State Cur)
         {
             char Opp;
@@ -451,14 +263,12 @@ namespace HexGame
             else Opp = 'R';
 
             List<Pair> Must = new List<Pair>();
-
-            //1- Connect my bridges if opp. played in a midlock
             for (int i = 0; i < P.NumofCellsPlayed; i++)
             {
-                List<Bridge> temp = PointBridges(new Pair(P.PlayerCells[i].CorX, P.PlayerCells[i].CorY));
+                List<Bridge> temp = PointBridges(new Pair (P.PlayerCells[i].CorX, P.PlayerCells[i].CorY));
                 for (int j = 0; j < temp.Count; j++)
                 {
-                    if (Cur.BoardCell[temp[j].Pos.x, temp[j].Pos.y].OccupiedBy == P.Color)
+                    if(Cur.BoardCell[temp[j].Pos.x, temp[j].Pos.y].OccupiedBy == P.Color)
                     {
                         if (Cur.BoardCell[temp[j].mids[0].x, temp[j].mids[0].y].OccupiedBy == Opp && Cur.BoardCell[temp[j].mids[1].x, temp[j].mids[1].y].OccupiedBy == 'N')
                             Must.Add(temp[j].mids[1]);
@@ -467,73 +277,9 @@ namespace HexGame
                     }
                 }
             }
-            if (Must.Count != 0) return Must;
-
-            ////////////////////////////////////////////////
-            //2- Cells adj. to board walls --> assumed as bridges
-            ////////////////////////////////////////////////////
-            for (int i = 0; i < P.NumofCellsPlayed; i++)
-            {
-                int X = P.PlayerCells[i].CorX, Y = P.PlayerCells[i].CorY;
-                if (P.Color == 'R' && X == 1)
-                {
-                    if (X - 1 >= 0 && Y + 1 <= 10 && Opp == Cur.BoardCell[X - 1, Y].OccupiedBy && Cur.BoardCell[X - 1, Y + 1].OccupiedBy == 'N')
-                    {
-                        Must.Add(new Pair(X - 1, Y + 1));
-
-                    }
-                    else if (X - 1 >= 0 && Y + 1 <= 10 && Opp == Cur.BoardCell[X - 1, Y + 1].OccupiedBy && Cur.BoardCell[X - 1, Y].OccupiedBy == 'N')
-                    {
-                        Must.Add(new Pair(X - 1, Y));
-                    }
-                }
-                else if (P.Color == 'R' && X == 9)
-                {
-                    if (X + 1 <= 10 && Y - 1 >= 0 && Opp == Cur.BoardCell[X + 1, Y].OccupiedBy && Cur.BoardCell[X + 1, Y - 1].OccupiedBy == 'N')
-                    {
-                        Must.Add(new Pair(X + 1, Y - 1));
-                    }
-
-                    else if (X + 1 <= 10 && Y - 1 >= 0 && Opp == Cur.BoardCell[X + 1, Y - 1].OccupiedBy && Cur.BoardCell[X + 1, Y].OccupiedBy == 'N')
-                    {
-                        Must.Add(new Pair(X + 1, Y));
-                    }
-                }
-                else if (P.Color == 'B' && Y == 1)
-                {
-                    if (X + 1 <= 10 && Y - 1 >= 0 && Opp == Cur.BoardCell[X + 1, Y - 1].OccupiedBy && Cur.BoardCell[X, Y - 1].OccupiedBy == 'N')
-                    {
-                        Must.Add(new Pair(X, Y - 1));
-                    }
-
-                    else if (X + 1 <= 10 && Y - 1 >= 0 && Opp == Cur.BoardCell[X, Y - 1].OccupiedBy && Cur.BoardCell[X + 1, Y - 1].OccupiedBy == 'N')
-                    {
-                        Must.Add(new Pair(X + 1, Y - 1));
-                    }
-                }
-                else if (P.Color == 'B' && Y == 9)
-                {
-                    if (X - 1 >= 0 && Y + 1 <= 10 && Opp == Cur.BoardCell[X - 1, Y + 1].OccupiedBy && Cur.BoardCell[X, Y + 1].OccupiedBy == 'N')
-                    {
-                        Must.Add(new Pair(X, Y + 1));
-                    }
-
-                    else if (X - 1 >= 0 && Y + 1 <= 10 && Opp == Cur.BoardCell[X, Y + 1].OccupiedBy && Cur.BoardCell[X - 1, Y + 1].OccupiedBy == 'N')
-                    {
-                        Must.Add(new Pair(X - 1, Y + 1));
-                    }
-                }
-            }
-           
-            if (Must.Count != 0) return Must;
-
-            ////////////////////////////////////////////////////////
-            //3- Connect non connected bridges, if I finished a line from side to side
-            Must = MustConnect(P, Cur);
 
             return Must;
-        }
-       
+        } 
 
         public List<Bridge> GetBridges(int x, int y, State Cur)
         {
@@ -565,405 +311,176 @@ namespace HexGame
 
 
         }
-
-        //public List<Bridge> GetVCBridges(Player Pme, State MyState)
-        //{
-        //    List<Bridge> Plays = new List<Bridge>();
-        //    for (int i = 0; i < Pme.SetOfConnections.ConCount; i++)
-        //    {
-        //        Pair tm1, tm2;
-        //        List<Bridge> PmeBridges;
-        //        if (Pme.SetOfConnections.Connections[i].Higher.data.Count != 0)
-        //        {
-
-        //            ///////////////////////////////////////////////////
-
-        //            tm1 = Pme.SetOfConnections.Connections[i].Higher.Dequeue();
-
-        //            PmeBridges = new List<Bridge>();
-        //            PmeBridges = GetBridges(tm1.x, tm1.y, MyState);
-        //            for (int j = 0; j < PmeBridges.Count; j++)
-        //            {
-        //                Plays.Add(PmeBridges[j]);
-        //            }
-
-
-
-        //            ////////////////////////////////////////////////////
-        //            if (Pme.SetOfConnections.Connections[i].Higher.data.Count != 0)
-        //            {
-        //                tm2 = Pme.SetOfConnections.Connections[i].Higher.Dequeue();
-
-        //                PmeBridges = new List<Bridge>();
-        //                PmeBridges = GetBridges(tm2.x, tm2.y, MyState);
-        //                for (int j = 0; j < PmeBridges.Count; j++)
-        //                {
-        //                    Plays.Add(PmeBridges[j]);
-        //                }
-
-        //                Pme.SetOfConnections.Connections[i].Higher.Enqueue(tm2);
-        //            }
-        //            Pme.SetOfConnections.Connections[i].Higher.Enqueue(tm1);
-        //            ///////////////////////////////////////////////////
-
-        //        }
-
-        //        if (Pme.SetOfConnections.Connections[i].Lower.data.Count != 0)
-        //        {
-        //            ///////////////////////////////////////////////////
-
-        //            tm1 = Pme.SetOfConnections.Connections[i].Lower.Dequeue();
-
-        //            PmeBridges = new List<Bridge>();
-        //            PmeBridges = GetBridges(tm1.x, tm1.y, MyState);
-        //            for (int j = 0; j < PmeBridges.Count; j++)
-        //            {
-        //                Plays.Add(PmeBridges[j]);
-        //            }
-
-
-        //            ////////////////////////////////////////////////////
-        //            if (Pme.SetOfConnections.Connections[i].Lower.data.Count != 0)
-        //            {
-        //                tm2 = Pme.SetOfConnections.Connections[i].Lower.Dequeue();
-        //                PmeBridges = new List<Bridge>();
-        //                PmeBridges = GetBridges(tm2.x, tm2.y, MyState);
-        //                for (int j = 0; j < PmeBridges.Count; j++)
-        //                {
-        //                    Plays.Add(PmeBridges[j]);
-        //                }
-        //                Pme.SetOfConnections.Connections[i].Lower.Enqueue(tm2);
-        //            }
-        //            Pme.SetOfConnections.Connections[i].Lower.Enqueue(tm1);
-
-        //            ///////////////////////////////////////////////////
-        //        }
-        //    }
-        //    return Plays;
-        //}
-
-        public List<Bridge> GetVCBridges(Player Pme, State MyState)
-        {
-            List<Bridge> Plays = new List<Bridge>();
-            for (int i = 0; i < Pme.SetOfConnections.ConCount; i++)
-            {
-                Pair tm1;
-                List<Bridge> PmeBridges;
-                Connection tmp = new Connection(Pme.Color);
-
-                while (Pme.SetOfConnections.Connections[i].Higher.Count() != 0)
-                {
-                    if (Pme.SetOfConnections.Connections[i].Higher.Count() == 0) break;
-
-                    tm1 = Pme.SetOfConnections.Connections[i].Higher.Dequeue();
-
-                    tmp.Higher.Enqueue(new Pair(tm1.x, tm1.y));
-                    PmeBridges = new List<Bridge>();
-                    PmeBridges = GetBridges(tm1.x, tm1.y, MyState);
-                    for (int k = 0; k < PmeBridges.Count; k++)
-                    {
-                        Plays.Add(PmeBridges[k]);
-                    }
-                    if (PmeBridges.Count != 0) break;
-                }
-
-                while (Pme.SetOfConnections.Connections[i].Lower.Count() != 0)
-                {
-                    if (Pme.SetOfConnections.Connections[i].Lower.Count() == 0)
-                        break;
-
-                    tm1 = Pme.SetOfConnections.Connections[i].Lower.Dequeue();
-
-                    tmp.Lower.Enqueue(new Pair(tm1.x, tm1.y));
-                    PmeBridges = new List<Bridge>();
-                    PmeBridges = GetBridges(tm1.x, tm1.y, MyState);
-                    for (int k = 0; k < PmeBridges.Count; k++)
-                    {
-                        Plays.Add(PmeBridges[k]);
-                    }
-
-                    if (PmeBridges.Count != 0)
-                        break;
-                }
-
-                Pme.SetOfConnections.Connections[i].Copy(tmp);
-            }
-            return Plays;
-        }
-
-        public List<Pair> GetVCAdjac(Player Pme, State MyState)
-        {
-            List<Pair> Plays = new List<Pair>();
-            for (int i = 0; i < Pme.SetOfConnections.ConCount; i++)
-            {
-                Pair tm1;
-                List<Pair> adj1;
-                Connection tmp = new Connection(Pme.Color);
-
-                while (Pme.SetOfConnections.Connections[i].Higher.Count() != 0)
-                {
-                    tm1 = Pme.SetOfConnections.Connections[i].Higher.Dequeue();
-                    tmp.Higher.Enqueue(new Pair(tm1.x, tm1.y));
-
-                    adj1 = new List<Pair>();
-                    adj1 = GetAdjacent(tm1, MyState);
-                    for (int k = 0; k < adj1.Count; k++)
-                    {
-                        Plays.Add(adj1[k]);
-                    }
-                    if (adj1.Count != 0) break;
-                }
-
-                while (Pme.SetOfConnections.Connections[i].Lower.Count() != 0)
-                {
-                    tm1 = Pme.SetOfConnections.Connections[i].Lower.Dequeue();
-                    tmp.Lower.Enqueue(new Pair(tm1.x, tm1.y));
-
-                    adj1 = new List<Pair>();
-                    adj1 = GetAdjacent(tm1, MyState);
-                    for (int k = 0; k < adj1.Count; k++)
-                    {
-                        Plays.Add(adj1[k]);
-                    }
-                    if (adj1.Count != 0) break;
-                }
-                Pme.SetOfConnections.Connections[i].Copy(tmp);
-            }
-            return Plays;
-        }
-
-        //public List<Pair> GetVCAdjac(Player Pme, State MyState)
-        //{
-        //    List<Pair> Plays = new List<Pair>();
-        //    for (int i = 0; i < Pme.SetOfConnections.ConCount; i++)
-        //    {
-        //        Pair tm1, tm2;
-
-        //        List<Pair> adj1;
-        //        List<Pair> adj2;
-        //        if (Pme.SetOfConnections.Connections[i].Higher.data.Count != 0)
-        //        {
-
-        //            ///////////////////////////////////////////////////
-
-        //            tm1 = Pme.SetOfConnections.Connections[i].Higher.Dequeue();
-
-        //            adj1 = new List<Pair>();
-
-        //            adj1 = GetAdjacent(tm1, MyState);
-        //            for (int j = 0; j < adj1.Count; j++)
-        //            {
-        //                Plays.Add(adj1[j]);
-        //            }
-
-        //            Pme.SetOfConnections.Connections[i].Higher.Enqueue(tm1);
-
-        //            ////////////////////////////////////////////////////
-        //            if (Pme.SetOfConnections.Connections[i].Higher.data.Count != 0)
-        //            {
-        //                tm2 = Pme.SetOfConnections.Connections[i].Higher.Dequeue();
-
-        //                adj2 = new List<Pair>();
-        //                adj2 = GetAdjacent(tm2, MyState);
-        //                for (int j = 0; j < adj2.Count; j++)
-        //                {
-        //                    Plays.Add(adj2[j]);
-        //                }
-        //                Pme.SetOfConnections.Connections[i].Higher.Enqueue(tm2);
-        //            }
-        //            ///////////////////////////////////////////////////
-
-        //        }
-
-        //        if (Pme.SetOfConnections.Connections[i].Lower.data.Count != 0)
-        //        {
-        //            ///////////////////////////////////////////////////
-
-        //            tm1 = Pme.SetOfConnections.Connections[i].Lower.Dequeue();
-
-        //            adj1 = new List<Pair>();
-
-        //            adj1 = GetAdjacent(tm1, MyState);
-        //            for (int j = 0; j < adj1.Count; j++)
-        //            {
-        //                Plays.Add(adj1[j]);
-        //            }
-
-        //            Pme.SetOfConnections.Connections[i].Lower.Enqueue(tm1);
-
-        //            ////////////////////////////////////////////////////
-        //            if (Pme.SetOfConnections.Connections[i].Lower.data.Count != 0)
-        //            {
-        //                tm2 = Pme.SetOfConnections.Connections[i].Lower.Dequeue();
-
-        //                adj2 = new List<Pair>();
-        //                adj2 = GetAdjacent(tm2, MyState);
-        //                for (int j = 0; j < adj2.Count; j++)
-        //                {
-        //                    Plays.Add(adj2[j]);
-        //                }
-        //                Pme.SetOfConnections.Connections[i].Lower.Enqueue(tm2);
-        //            }
-        //            ///////////////////////////////////////////////////
-        //        }
-        //    }
-        //    return Plays;
-        //}
-        public List<Pair> LegalPlays(Player Pme, Player Popp, State MyState) //Used in simulation & node expansion
+        public List<Pair> LegalPlays(Player Pme, Player Popp,State MyState) //Used in simulation & node expansion
         {
 
             HashSet<Pair> Prev = new HashSet<Pair>();
-            bool[,] Hash;
-            Hash = new bool[11, 11];
-            
+
             List<Pair> LegalPair = new List<Pair>();
 
             List<Pair> MustPair = new List<Pair>();
 
-            List<Bridge> PrioBridges = new List<Bridge>();
-
-            List<Pair> PrioAdjac = new List<Pair>();
-
-
-            //Must Play (3 cases)
             MustPair = MustPlay(Pme, MyState);
 
             for (int i = 0; i < MustPair.Count; i++)
             {
-                if (!Hash[MustPair[i].x, MustPair[i].y])
+                if (!Prev.Contains(MustPair[i]))
                 {
                     LegalPair.Add(MustPair[i]);
                     Prev.Add(MustPair[i]);
-                    Hash[MustPair[i].x, MustPair[i].y] = true;
                 }
             }
 
             if (LegalPair.Count != 0) return LegalPair;
-            
-            ////////////////Attack/////////////////////
-            //1-Play in Connection end points bridges
-            PrioBridges = GetVCBridges(Pme, MyState);
 
-            for (int i = 0; i < PrioBridges.Count; i++)
+            /////////////////////////////////////////////
+            for (int i = 0; i < Pme.NumofCellsPlayed; i++)
             {
-                if (!Hash[PrioBridges[i].Pos.x, PrioBridges[i].Pos.y])
+                List<Bridge> PmeBridges = new List<Bridge>();
+                PmeBridges = GetBridges(Pme.PlayerCells[i].CorX, Pme.PlayerCells[i].CorY, MyState);
+                for (int j = 0; j < PmeBridges.Count; j++)
                 {
-                    LegalPair.Add(PrioBridges[i].Pos);
-                    Prev.Add(PrioBridges[i].Pos);
-                    Hash[PrioBridges[i].Pos.x, PrioBridges[i].Pos.y] = true;
-                }
-            }
-
-            if (LegalPair.Count != 0) goto OppCalc;
-
-            //////////////////////////////////////////////
-            //2- Adjacent to endpoints of connections
-            PrioAdjac = GetVCAdjac(Pme, MyState);
-
-            for (int i = 0; i < PrioAdjac.Count; i++)
-            {
-                if (!Hash[PrioAdjac[i].x, PrioAdjac[i].y])
-                {
-                    LegalPair.Add(PrioAdjac[i]);
-                    Prev.Add(PrioAdjac[i]);
-                    Hash[PrioAdjac[i].x, PrioAdjac[i].y] = true;
-                }
-            }
-
-            if (LegalPair.Count != 0) goto OppCalc;
-
-            ////////////////////////////////////////////// Play in my midlocks
-
-            //for (int i = 0; i < Pme.NumofCellsPlayed; i++)
-            //{
-            //    List<Bridge> PmeBridges = new List<Bridge>();
-            //    PmeBridges = PointBridges(new Pair(Pme.PlayerCells[i].CorX, Pme.PlayerCells[i].CorY));
-            //    for (int j = 0; j < PmeBridges.Count; j++)
-            //    {
-            //        if (MyState.BoardCell[PmeBridges[j].Pos.x, PmeBridges[j].Pos.y].OccupiedBy == Pme.Color)
-            //        {
-            //            if (/*!Prev.Contains(PmeBridges[j].mids[0])*/!Hash[PmeBridges[j].mids[0].x, PmeBridges[j].mids[0].y] && MyState.BoardCell[PmeBridges[j].mids[0].x, PmeBridges[j].mids[0].y].OccupiedBy == 'N')
-            //            {
-            //                LegalPair.Add(PmeBridges[j].mids[0]);
-            //                Prev.Add(PmeBridges[j].mids[0]);
-            //                Hash[PmeBridges[j].mids[0].x, PmeBridges[j].mids[0].y] = true;
-            //            }
-            //            if (/*!Prev.Contains(PmeBridges[j].mids[1])*/!Hash[PmeBridges[j].mids[1].x, PmeBridges[j].mids[1].y] && MyState.BoardCell[PmeBridges[j].mids[1].x, PmeBridges[j].mids[1].y].OccupiedBy == 'N')
-            //            {
-            //                LegalPair.Add(PmeBridges[j].mids[1]);
-            //                Prev.Add(PmeBridges[j].mids[1]);
-            //                Hash[PmeBridges[j].mids[0].x, PmeBridges[j].mids[0].y] = true;
-            //            }
-            //        }
-            //    }
-            //}
-
-        ////////////////////////////////////////////// Play in opponent VC midlocks
-        
-
-       /////////////////Defense/////////////////////
-       //1- Play in possible bridge's midlocks
-        OppCalc:
-            List<Bridge> PoppBridges = new List<Bridge>();
-            PoppBridges = GetVCBridges(Popp, MyState);
-            for (int i = 0; i < PoppBridges.Count; i++)
-            {
-                for (int k = 0; k < PoppBridges[i].mids.Count; k++)
-                {
-                    if (!Hash[PoppBridges[i].mids[k].x, PoppBridges[i].mids[k].y])
+                    if (!Prev.Contains(PmeBridges[j].Pos))
                     {
-                        LegalPair.Add(PoppBridges[i].mids[k]);
-                        Prev.Add(PoppBridges[i].mids[k]);
-                        Hash[PoppBridges[i].mids[k].x, PoppBridges[i].mids[k].y] = true;
+                        LegalPair.Add(PmeBridges[j].Pos);
+                        Prev.Add(PmeBridges[j].Pos);
                     }
-                    //if (!Hash[PoppBridges[i].Pos.x, PoppBridges[i].Pos.y])
-                    //{
-                    //    LegalPair.Add(PoppBridges[i].Pos);
-                    //    Hash[PoppBridges[i].Pos.x, PoppBridges[i].Pos.y] = true;
-                    //}
                 }
             }
 
-            
-            if (PoppBridges.Count != 0)
-                goto ret;
-            
-            //2-Play in Adjacent to endpoints
+            if (LegalPair.Count != 0) return LegalPair;
+
+            /////////////////////////////////////////////
 
             for (int i = 0; i < Popp.NumofCellsPlayed; i++)
             {
-                List<Pair> oppadjacent = new List<Pair>();
-                oppadjacent = GetVCAdjac(Popp, MyState);
-                for (int j = 0; j < oppadjacent.Count; j++)
+                List<Bridge> PoppBridges = new List<Bridge>();
+                PoppBridges = GetBridges(Popp.PlayerCells[i].CorX, Popp.PlayerCells[i].CorY, MyState);
+                for (int j = 0; j < PoppBridges.Count; j++)
                 {
-                    if (!Hash[oppadjacent[j].x, oppadjacent[j].y])
+                    for (int k = 0; k < PoppBridges[j].mids.Count; k++)
                     {
-                        LegalPair.Add(oppadjacent[j]);
-                        Prev.Add(oppadjacent[j]);
-                        Hash[oppadjacent[j].x, oppadjacent[j].y] = true;
+                        if (!Prev.Contains(PoppBridges[j].mids[k]))
+                        {
+                            LegalPair.Add(PoppBridges[j].mids[k]);
+                            Prev.Add(PoppBridges[j].mids[k]);
+                        }
                     }
+                    
+                }
+            }
+            if (LegalPair.Count != 0) return LegalPair;
+
+            for (int i = 0; i < Pme.NumofCellsPlayed; i++)
+            {
+                List<Bridge> PmeBridges = new List<Bridge>();
+                PmeBridges = PointBridges(new Pair(Pme.PlayerCells[i].CorX, Pme.PlayerCells[i].CorY));
+                for (int j = 0; j < PmeBridges.Count; j++)
+                {
+                    if (MyState.BoardCell[PmeBridges[j].Pos.x, PmeBridges[j].Pos.y].OccupiedBy == Pme.Color)
+                    {
+                        if (!Prev.Contains(PmeBridges[j].mids[0]) && MyState.BoardCell[PmeBridges[j].mids[0].x, PmeBridges[j].mids[0].y].OccupiedBy == 'N')
+                        {
+                            LegalPair.Add(PmeBridges[j].mids[0]);
+                            Prev.Add(PmeBridges[j].mids[0]);
+                        }
+                        if (!Prev.Contains(PmeBridges[j].mids[1]) && MyState.BoardCell[PmeBridges[j].mids[1].x, PmeBridges[j].mids[1].y].OccupiedBy == 'N')
+                        {
+                            LegalPair.Add(PmeBridges[j].mids[1]);
+                            Prev.Add(PmeBridges[j].mids[1]);
+                        }
+                    }
+                }
+            }
+            if (LegalPair.Count != 0) return LegalPair;
+            for (int i = 0; i < Pme.NumofCellsPlayed; i++)
+            {
+                List<Pair> myadjacent= new List<Pair>();
+                myadjacent = GetAdjacent(new Pair(Pme.PlayerCells[i].CorX, Pme.PlayerCells[i].CorY), MyState);
+                for (int j = 0; j < myadjacent.Count; j++)
+                {
+                    if (!Prev.Contains(myadjacent[j]))
+                        {
+                            LegalPair.Add(myadjacent[j]);
+                            Prev.Add(myadjacent[j]);
+                        }
+                    
+
                 }
             }
 
-            ret:
-            for (int i = 0; i < LegalPair.Count; i++)
-            {
-                List<Bridge> temp = PointBridges(LegalPair[i]);
-                for (int j = 0; j < temp.Count; j++)
-                {
-                    if (MyState.BoardCell[temp[j].Pos.x, temp[j].Pos.y].OccupiedBy == Pme.Color)
-                    {
-                        if (LegalPair.Count > 1 && MyState.BoardCell[temp[j].mids[0].x, temp[j].mids[0].y].OccupiedBy == Popp.Color && MyState.BoardCell[temp[j].mids[1].x, temp[j].mids[1].y].OccupiedBy == 'N')
-                        { LegalPair.RemoveAt(i); i--; break; }
-                        else if (LegalPair.Count > 1 && MyState.BoardCell[temp[j].mids[1].x, temp[j].mids[1].y].OccupiedBy == Popp.Color && MyState.BoardCell[temp[j].mids[0].x, temp[j].mids[0].y].OccupiedBy == 'N')
-                        { LegalPair.RemoveAt(i); i--; break; }
-                    }
-                }
-            }
+
+            //if (LegalPair.Count == 0)
+            //    Console.Write("sdjfhlk");
+
             return LegalPair;
         }
 
-       
+
+        //public List<State> LegalPlays(Player P, State MyState) //Used in simulation & node expansion
+        //{
+        //    List<State> s = new List<State>(121 - MyState.OccCells);
+        //    //bool flag = false;
+
+        //    for (int i = 0; i < 11; i++)
+        //        for (int j = 0; j < 11; j++)
+        //        {
+        //            if (MyState.bRange[0][0] <= i && MyState.bRange[0][1] <= j && MyState.bRange[1][0] <= i && MyState.bRange[1][1] >= j && MyState.bRange[2][0] >= i && MyState.bRange[2][1] <= j && MyState.bRange[3][0] >= i && MyState.bRange[3][1] >= j)
+        //            {
+
+
+        //                if ((CheckNeighboursOf2circles(i, j, MyState) == true && MyState.BoardCell[i, j].OccupiedBy == 'N') || MyState.OccCells == 0)
+        //                //if (MyState.BoardCell[i, j].OccupiedBy == 'N')
+        //                {
+        //                    State TempHex = new State();
+        //                    TempHex.CopyState(MyState);
+        //                    TempHex.BoardCell[i, j].OccupiedBy = P.Color;
+        //                    TempHex.BoardCell[i, j].CorX = i;
+        //                    TempHex.BoardCell[i, j].CorY = j;
+        //                    TempHex.BoardCell[i, j].flag = 1;
+
+        //                    TempHex.OccCells++;
+        //                    TempHex.cord[0] = i;
+        //                    TempHex.cord[1] = j;
+
+
+        //                    TempHex = UpdateRange(TempHex, i, j);
+
+        //                    State ss = new State();
+        //                    ss.CopyState(TempHex);
+        //                    s.Add(ss);
+        //                }
+
+        //            }
+        //        }
+        //    return s;
+        //}
+
+
+
+
+        //public State UpdateRange(State mys, int i, int j)
+        //{
+        //    int[][] Range = new int[4][];
+        //    for (int l = 0; l < 4; l++) Range[l] = new int[2];
+        //    int[][] cRange = mys.bRange;
+
+        //    Range[0][0] = Math.Max((Math.Min(i - 2, cRange[0][0])), 0);
+        //    Range[0][1] = Math.Max((Math.Min(j - 2, cRange[0][1])), 0);
+
+        //    Range[1][0] = Math.Max((Math.Min(i - 2, cRange[1][0])), 0);
+        //    Range[1][1] = Math.Min((Math.Max(j + 2, cRange[1][1])), 10);
+
+        //    Range[2][0] = Math.Min((Math.Max(i + 2, cRange[2][0])), 10);
+        //    Range[2][1] = Math.Max((Math.Min(j - 2, cRange[2][1])), 0);
+
+        //    Range[3][0] = Math.Min((Math.Max(i + 2, cRange[3][0])), 10);
+        //    Range[3][1] = Math.Min((Math.Max(j + 2, cRange[3][1])), 10);
+
+        //    mys.bRange = Range;
+        //    return mys;
+        //}
+
         private bool CheckNeighboursOf2circles(int i, int j, State mys)  //Check if here exist any neighbours of cells that is occupied 
         {
 
@@ -1072,7 +589,6 @@ namespace HexGame
 
         public int Winner(ref Player P, ref State s)
         {
-            stack MySt = new stack();
             int Counter0 = 0;
             int Counter10 = 0;
             List<Cell> temp = new List<Cell>();
@@ -1101,7 +617,7 @@ namespace HexGame
                         s.BoardCell[P.Buffer[0].CorX, P.Buffer[0].CorY].flag = 0;
 
                         MySt.Push(P.Buffer[0]);
-                        if (CheckNeighbours(MySt.C[MySt.top], ref P, ref s, ref MySt) == 24)
+                        if (CheckNeighbours(MySt.C[MySt.top], ref P, ref s) == 24)
                             return P.num;
                         MySt.Pop();
                     }
@@ -1112,7 +628,7 @@ namespace HexGame
                         {
                             s.BoardCell[P.Buffer[0].CorX, P.Buffer[0].CorY].flag = 0;
                             MySt.Push(P.Buffer[0]);
-                            if (CheckNeighbours(MySt.C[MySt.top], ref P, ref s, ref MySt) == 24)
+                            if (CheckNeighbours(MySt.C[MySt.top], ref P, ref s) == 24)
                                 return P.num;
                             MySt.Pop();
                         }
@@ -1143,11 +659,12 @@ namespace HexGame
                     //1.Check if it is in row #zero 
                     if (P.Buffer[0].CorY == 0)
                     {
+                        //Console.WriteLine("Checking if it won");
                         //Stack Method
                         s.BoardCell[P.Buffer[0].CorX, P.Buffer[0].CorY].flag = 0;
 
                         MySt.Push(P.Buffer[0]);
-                        if (CheckNeighbours(MySt.C[MySt.top], ref P, ref s, ref MySt) == 24)
+                        if (CheckNeighbours(MySt.C[MySt.top], ref P, ref s) == 24)
                             return P.num;
                         MySt.Pop();
                     }
@@ -1158,7 +675,7 @@ namespace HexGame
                         {
                             s.BoardCell[P.Buffer[0].CorX, P.Buffer[0].CorY].flag = 0;
                             MySt.Push(P.Buffer[0]);
-                            if (CheckNeighbours(MySt.C[MySt.top], ref P, ref s, ref MySt) == 24)
+                            if (CheckNeighbours(MySt.C[MySt.top], ref P, ref s) == 24)
                                 return P.num;
                             MySt.Pop();
                         }
@@ -1216,7 +733,8 @@ namespace HexGame
 
                 s.cord[0] = x;
                 s.cord[1] = y;
-                
+
+                //HexBoard = UpdateRange(HexBoard, x, y);
                 return s.BoardCell[x, y];
             }
             else return null;
