@@ -12,9 +12,9 @@ namespace HexGame
         public Cell[,] BoardCell; //2d array of cells, instance of board
         public int[] cord; //most-recently occupied cells
         public int OccCells;
-
-
-
+        
+        
+        
         public State()
         {
             OccCells = 0;
@@ -27,12 +27,12 @@ namespace HexGame
                     BoardCell[i, j] = new Cell(i, j, 'N', 1);
                 }
             }
-
+         
         }
         public void CopyState(State s)
         {
             OccCells = s.OccCells;
-
+          
             cord[0] = s.cord[0];
             cord[1] = s.cord[1];
 
@@ -94,7 +94,7 @@ namespace HexGame
             PlayerCells = new Cell[62];
 
             SetOfConnections.Copy(p.SetOfConnections);
-
+            
             for (int i = 0; i < p.Buffer.Count; i++)
             {
                 Cell c = new Cell(p.Buffer[i].CorX, p.Buffer[i].CorY, p.Buffer[i].OccupiedBy, p.Buffer[i].flag);
@@ -213,10 +213,10 @@ namespace HexGame
             HexBoard = new State();
             P1 = new Player('R', 1);
             P2 = new Player('B', 2);
-
+            
         }
 
-
+         
         public void SwapAtFirstTurn()
         {
             /////////////////////////////// PRIORITY QUEUES WILL EXCHANGE DATA ////////////////////////////
@@ -241,7 +241,7 @@ namespace HexGame
                 P1 = tR;
                 P2 = tB;
             }
-
+            
             P1.num = p1num;
             P2.num = p2num;
         }
@@ -258,8 +258,7 @@ namespace HexGame
                 X1 = new Bridge(new Pair(x - 1, y - 1), new Pair(x - 1, y), new Pair(x, y - 1));
                 Bridges.Add(X1);
             }
-            if (x - 2 >= 0 && x - 1 >= 0 && y + 1 <= 10)
-            {
+            if (x - 2 >= 0 && x - 1 >= 0 && y + 1 <= 10) {
                 X1 = new Bridge(new Pair(x - 2, y + 1), new Pair(x - 1, y), new Pair(x - 1, y + 1));
                 Bridges.Add(X1);
             }
@@ -288,7 +287,7 @@ namespace HexGame
 
         }
 
-        public List<Pair> MustConnect(Player P, State Cur)
+        public List<Pair> MustConnect(Player P,State Cur)
         {
             char Pcolor = P.Color;
             List<Pair> Must = new List<Pair>();
@@ -305,20 +304,20 @@ namespace HexGame
                             down.y - 1 >= 0 && Cur.BoardCell[down.x + 1, down.y - 1].OccupiedBy == 'N'))))
                         {
                             Connection tmp = new Connection(P.Color);
-                            for (int j = 0; j < P.SetOfConnections.Connections[i].Higher.data.Count; j++)
+                            while (P.SetOfConnections.Connections[i].Higher.Count() != 0)
                             {
                                 Pair tx = P.SetOfConnections.Connections[i].Higher.Dequeue();
                                 tmp.Higher.Enqueue(tx);
                                 if (tx.x == 1)
                                 {
+                                    if (Cur.BoardCell[tx.x - 1, tx.y].OccupiedBy != 'N') continue;
+                                    if (tx.y + 1 <= 10 && Cur.BoardCell[tx.x - 1, tx.y + 1].OccupiedBy != 'N') continue;
 
                                     if (Cur.BoardCell[tx.x - 1, tx.y].OccupiedBy == 'N')
                                         Must.Add(new Pair(tx.x - 1, tx.y));
-                                    else continue;
 
                                     if (tx.y + 1 <= 10 && Cur.BoardCell[tx.x - 1, tx.y + 1].OccupiedBy == 'N')
                                         Must.Add(new Pair(tx.x - 1, tx.y + 1));
-                                    else continue;
                                 }
                                 else
                                 {
@@ -336,19 +335,21 @@ namespace HexGame
                                     }
                                 }
                             }
-                            for (int j = 0; j < P.SetOfConnections.Connections[i].Lower.data.Count; j++)
+                            while (P.SetOfConnections.Connections[i].Lower.Count() != 0)
                             {
                                 Pair tx = P.SetOfConnections.Connections[i].Lower.Dequeue();
                                 tmp.Lower.Enqueue(tx);
                                 if (tx.x == 9)
                                 {
+                                    if (Cur.BoardCell[tx.x + 1, tx.y].OccupiedBy != 'N') continue;
+                                    if (tx.y - 1 >= 0 && Cur.BoardCell[tx.x + 1, tx.y - 1].OccupiedBy != 'N') continue;
+
                                     if (Cur.BoardCell[tx.x + 1, tx.y].OccupiedBy == 'N')
                                         Must.Add(new Pair(tx.x + 1, tx.y));
-                                    else continue;
-
+                                    
                                     if (tx.y - 1 >= 0 && Cur.BoardCell[tx.x + 1, tx.y - 1].OccupiedBy == 'N')
                                         Must.Add(new Pair(tx.x + 1, tx.y - 1));
-                                    else continue;
+                                    
                                 }
                                 else
                                 {
@@ -367,14 +368,15 @@ namespace HexGame
                                 }
                             }
                             // todo enqueue the connection again
-                            for (int j = 0; j < tmp.Higher.data.Count; j++)
-                            {
-                                P.SetOfConnections.Connections[i].Higher.Enqueue(tmp.Higher.Dequeue());
-                            }
-                            for (int j = 0; j < tmp.Lower.data.Count; j++)
-                            {
-                                P.SetOfConnections.Connections[i].Lower.Enqueue(tmp.Lower.Dequeue());
-                            }
+                            //for (int j = 0; j < tmp.Higher.data.Count; j++)
+                            //{
+                            //    P.SetOfConnections.Connections[i].Higher.Enqueue(tmp.Higher.Dequeue());
+                            //}
+                            //for (int j = 0; j < tmp.Lower.data.Count; j++)
+                            //{
+                            //    P.SetOfConnections.Connections[i].Lower.Enqueue(tmp.Lower.Dequeue());
+                            //}
+                            P.SetOfConnections.Connections[i].Copy(tmp);
                         }
                     }
                 }
@@ -391,19 +393,20 @@ namespace HexGame
                             right.x - 1 >= 0 && Cur.BoardCell[right.x - 1, right.y + 1].OccupiedBy == 'N'))))
                         {
                             Connection tmp = new Connection(P.Color);
-                            for (int j = 0; j < P.SetOfConnections.Connections[i].Higher.data.Count; j++)
+                            while (P.SetOfConnections.Connections[i].Higher.Count() != 0)
                             {
                                 Pair tx = P.SetOfConnections.Connections[i].Higher.Dequeue();
                                 tmp.Higher.Enqueue(tx);
                                 if (tx.y == 1)
                                 {
+                                    if (Cur.BoardCell[tx.x, tx.y - 1].OccupiedBy != 'N') continue;
+                                    if (tx.x + 1 <= 10 && Cur.BoardCell[tx.x + 1, tx.y - 1].OccupiedBy != 'N') continue;
+
                                     if (Cur.BoardCell[tx.x, tx.y - 1].OccupiedBy == 'N')
                                         Must.Add(new Pair(tx.x, tx.y - 1));
-                                    else continue;
-
+                                   
                                     if (tx.x + 1 <= 10 && Cur.BoardCell[tx.x + 1, tx.y - 1].OccupiedBy == 'N')
                                         Must.Add(new Pair(tx.x + 1, tx.y - 1));
-                                    else continue;
                                 }
                                 else
                                 {
@@ -421,19 +424,20 @@ namespace HexGame
                                     }
                                 }
                             }
-                            for (int j = 0; j < P.SetOfConnections.Connections[i].Lower.data.Count; j++)
+                            while (P.SetOfConnections.Connections[i].Lower.Count() != 0)
                             {
                                 Pair tx = P.SetOfConnections.Connections[i].Lower.Dequeue();
                                 tmp.Lower.Enqueue(tx);
                                 if (tx.y == 9)
                                 {
+                                    if (Cur.BoardCell[tx.x, tx.y + 1].OccupiedBy != 'N') continue;
+                                    if (tx.x - 1 >= 0 && Cur.BoardCell[tx.x - 1, tx.y + 1].OccupiedBy != 'N') continue;
+
                                     if (Cur.BoardCell[tx.x, tx.y + 1].OccupiedBy == 'N')
                                         Must.Add(new Pair(tx.x, tx.y + 1));
-                                    else continue;
-
+                                    
                                     if (tx.x - 1 >= 0 && Cur.BoardCell[tx.x - 1, tx.y + 1].OccupiedBy == 'N')
                                         Must.Add(new Pair(tx.x - 1, tx.y + 1));
-                                    else continue;
                                 }
                                 else
                                 {
@@ -452,14 +456,15 @@ namespace HexGame
                                 }
                             }
                             // todo enqueue the connection again
-                            for (int j = 0; j < tmp.Higher.data.Count; j++)
-                            {
-                                P.SetOfConnections.Connections[i].Higher.Enqueue(tmp.Higher.Dequeue());
-                            }
-                            for (int j = 0; j < tmp.Lower.data.Count; j++)
-                            {
-                                P.SetOfConnections.Connections[i].Lower.Enqueue(tmp.Lower.Dequeue());
-                            }
+                            //for (int j = 0; j < tmp.Higher.data.Count; j++)
+                            //{
+                            //    P.SetOfConnections.Connections[i].Higher.Enqueue(tmp.Higher.Dequeue());
+                            //}
+                            //for (int j = 0; j < tmp.Lower.data.Count; j++)
+                            //{
+                            //    P.SetOfConnections.Connections[i].Lower.Enqueue(tmp.Lower.Dequeue());
+                            //}
+                            P.SetOfConnections.Connections[i].Copy(tmp);
                         }
                     }
                 }
@@ -546,7 +551,7 @@ namespace HexGame
                     }
                 }
             }
-
+           
             if (Must.Count != 0) return Must;
 
             ////////////////////////////////////////////////////////
@@ -555,7 +560,7 @@ namespace HexGame
 
             return Must;
         }
-
+       
 
         public List<Bridge> GetBridges(int x, int y, State Cur)
         {
@@ -587,7 +592,82 @@ namespace HexGame
 
 
         }
-        
+
+        //public List<Bridge> GetVCBridges(Player Pme, State MyState)
+        //{
+        //    List<Bridge> Plays = new List<Bridge>();
+        //    for (int i = 0; i < Pme.SetOfConnections.ConCount; i++)
+        //    {
+        //        Pair tm1, tm2;
+        //        List<Bridge> PmeBridges;
+        //        if (Pme.SetOfConnections.Connections[i].Higher.data.Count != 0)
+        //        {
+
+        //            ///////////////////////////////////////////////////
+
+        //            tm1 = Pme.SetOfConnections.Connections[i].Higher.Dequeue();
+
+        //            PmeBridges = new List<Bridge>();
+        //            PmeBridges = GetBridges(tm1.x, tm1.y, MyState);
+        //            for (int j = 0; j < PmeBridges.Count; j++)
+        //            {
+        //                Plays.Add(PmeBridges[j]);
+        //            }
+
+
+
+        //            ////////////////////////////////////////////////////
+        //            if (Pme.SetOfConnections.Connections[i].Higher.data.Count != 0)
+        //            {
+        //                tm2 = Pme.SetOfConnections.Connections[i].Higher.Dequeue();
+
+        //                PmeBridges = new List<Bridge>();
+        //                PmeBridges = GetBridges(tm2.x, tm2.y, MyState);
+        //                for (int j = 0; j < PmeBridges.Count; j++)
+        //                {
+        //                    Plays.Add(PmeBridges[j]);
+        //                }
+
+        //                Pme.SetOfConnections.Connections[i].Higher.Enqueue(tm2);
+        //            }
+        //            Pme.SetOfConnections.Connections[i].Higher.Enqueue(tm1);
+        //            ///////////////////////////////////////////////////
+
+        //        }
+
+        //        if (Pme.SetOfConnections.Connections[i].Lower.data.Count != 0)
+        //        {
+        //            ///////////////////////////////////////////////////
+
+        //            tm1 = Pme.SetOfConnections.Connections[i].Lower.Dequeue();
+
+        //            PmeBridges = new List<Bridge>();
+        //            PmeBridges = GetBridges(tm1.x, tm1.y, MyState);
+        //            for (int j = 0; j < PmeBridges.Count; j++)
+        //            {
+        //                Plays.Add(PmeBridges[j]);
+        //            }
+
+
+        //            ////////////////////////////////////////////////////
+        //            if (Pme.SetOfConnections.Connections[i].Lower.data.Count != 0)
+        //            {
+        //                tm2 = Pme.SetOfConnections.Connections[i].Lower.Dequeue();
+        //                PmeBridges = new List<Bridge>();
+        //                PmeBridges = GetBridges(tm2.x, tm2.y, MyState);
+        //                for (int j = 0; j < PmeBridges.Count; j++)
+        //                {
+        //                    Plays.Add(PmeBridges[j]);
+        //                }
+        //                Pme.SetOfConnections.Connections[i].Lower.Enqueue(tm2);
+        //            }
+        //            Pme.SetOfConnections.Connections[i].Lower.Enqueue(tm1);
+
+        //            ///////////////////////////////////////////////////
+        //        }
+        //    }
+        //    return Plays;
+        //}
 
         public List<Bridge> GetVCBridges(Player Pme, State MyState)
         {
@@ -678,14 +758,91 @@ namespace HexGame
             }
             return Plays;
         }
-        
+
+        //public List<Pair> GetVCAdjac(Player Pme, State MyState)
+        //{
+        //    List<Pair> Plays = new List<Pair>();
+        //    for (int i = 0; i < Pme.SetOfConnections.ConCount; i++)
+        //    {
+        //        Pair tm1, tm2;
+
+        //        List<Pair> adj1;
+        //        List<Pair> adj2;
+        //        if (Pme.SetOfConnections.Connections[i].Higher.data.Count != 0)
+        //        {
+
+        //            ///////////////////////////////////////////////////
+
+        //            tm1 = Pme.SetOfConnections.Connections[i].Higher.Dequeue();
+
+        //            adj1 = new List<Pair>();
+
+        //            adj1 = GetAdjacent(tm1, MyState);
+        //            for (int j = 0; j < adj1.Count; j++)
+        //            {
+        //                Plays.Add(adj1[j]);
+        //            }
+
+        //            Pme.SetOfConnections.Connections[i].Higher.Enqueue(tm1);
+
+        //            ////////////////////////////////////////////////////
+        //            if (Pme.SetOfConnections.Connections[i].Higher.data.Count != 0)
+        //            {
+        //                tm2 = Pme.SetOfConnections.Connections[i].Higher.Dequeue();
+
+        //                adj2 = new List<Pair>();
+        //                adj2 = GetAdjacent(tm2, MyState);
+        //                for (int j = 0; j < adj2.Count; j++)
+        //                {
+        //                    Plays.Add(adj2[j]);
+        //                }
+        //                Pme.SetOfConnections.Connections[i].Higher.Enqueue(tm2);
+        //            }
+        //            ///////////////////////////////////////////////////
+
+        //        }
+
+        //        if (Pme.SetOfConnections.Connections[i].Lower.data.Count != 0)
+        //        {
+        //            ///////////////////////////////////////////////////
+
+        //            tm1 = Pme.SetOfConnections.Connections[i].Lower.Dequeue();
+
+        //            adj1 = new List<Pair>();
+
+        //            adj1 = GetAdjacent(tm1, MyState);
+        //            for (int j = 0; j < adj1.Count; j++)
+        //            {
+        //                Plays.Add(adj1[j]);
+        //            }
+
+        //            Pme.SetOfConnections.Connections[i].Lower.Enqueue(tm1);
+
+        //            ////////////////////////////////////////////////////
+        //            if (Pme.SetOfConnections.Connections[i].Lower.data.Count != 0)
+        //            {
+        //                tm2 = Pme.SetOfConnections.Connections[i].Lower.Dequeue();
+
+        //                adj2 = new List<Pair>();
+        //                adj2 = GetAdjacent(tm2, MyState);
+        //                for (int j = 0; j < adj2.Count; j++)
+        //                {
+        //                    Plays.Add(adj2[j]);
+        //                }
+        //                Pme.SetOfConnections.Connections[i].Lower.Enqueue(tm2);
+        //            }
+        //            ///////////////////////////////////////////////////
+        //        }
+        //    }
+        //    return Plays;
+        //}
         public List<Pair> LegalPlays(Player Pme, Player Popp, State MyState) //Used in simulation & node expansion
         {
 
             HashSet<Pair> Prev = new HashSet<Pair>();
             bool[,] Hash;
             Hash = new bool[11, 11];
-
+            
             List<Pair> LegalPair = new List<Pair>();
 
             List<Pair> MustPair = new List<Pair>();
@@ -709,7 +866,7 @@ namespace HexGame
             }
 
             if (LegalPair.Count != 0) return LegalPair;
-
+            
             ////////////////Attack/////////////////////
             //1-Play in Connection end points bridges
             PrioBridges = GetVCBridges(Pme, MyState);
@@ -741,12 +898,39 @@ namespace HexGame
             }
 
             if (LegalPair.Count != 0) goto OppCalc;
-            
 
+            ////////////////////////////////////////////// Play in my midlocks
 
-            /////////////////Defense/////////////////////
-            //1- Play in possible bridge's midlocks
-            OppCalc:
+            //for (int i = 0; i < Pme.NumofCellsPlayed; i++)
+            //{
+            //    List<Bridge> PmeBridges = new List<Bridge>();
+            //    PmeBridges = PointBridges(new Pair(Pme.PlayerCells[i].CorX, Pme.PlayerCells[i].CorY));
+            //    for (int j = 0; j < PmeBridges.Count; j++)
+            //    {
+            //        if (MyState.BoardCell[PmeBridges[j].Pos.x, PmeBridges[j].Pos.y].OccupiedBy == Pme.Color)
+            //        {
+            //            if (/*!Prev.Contains(PmeBridges[j].mids[0])*/!Hash[PmeBridges[j].mids[0].x, PmeBridges[j].mids[0].y] && MyState.BoardCell[PmeBridges[j].mids[0].x, PmeBridges[j].mids[0].y].OccupiedBy == 'N')
+            //            {
+            //                LegalPair.Add(PmeBridges[j].mids[0]);
+            //                Prev.Add(PmeBridges[j].mids[0]);
+            //                Hash[PmeBridges[j].mids[0].x, PmeBridges[j].mids[0].y] = true;
+            //            }
+            //            if (/*!Prev.Contains(PmeBridges[j].mids[1])*/!Hash[PmeBridges[j].mids[1].x, PmeBridges[j].mids[1].y] && MyState.BoardCell[PmeBridges[j].mids[1].x, PmeBridges[j].mids[1].y].OccupiedBy == 'N')
+            //            {
+            //                LegalPair.Add(PmeBridges[j].mids[1]);
+            //                Prev.Add(PmeBridges[j].mids[1]);
+            //                Hash[PmeBridges[j].mids[0].x, PmeBridges[j].mids[0].y] = true;
+            //            }
+            //        }
+            //    }
+            //}
+
+        ////////////////////////////////////////////// Play in opponent VC midlocks
+        
+
+       /////////////////Defense/////////////////////
+       //1- Play in possible bridge's midlocks
+        OppCalc:
             List<Bridge> PoppBridges = new List<Bridge>();
             PoppBridges = GetVCBridges(Popp, MyState);
             for (int i = 0; i < PoppBridges.Count; i++)
@@ -767,10 +951,10 @@ namespace HexGame
                 }
             }
 
-
+            
             if (PoppBridges.Count != 0)
                 goto ret;
-
+            
             //2-Play in Adjacent to endpoints
 
             for (int i = 0; i < Popp.NumofCellsPlayed; i++)
@@ -806,7 +990,7 @@ namespace HexGame
             return LegalPair;
         }
 
-
+       
         private bool CheckNeighboursOf2circles(int i, int j, State mys)  //Check if here exist any neighbours of cells that is occupied 
         {
 
@@ -1059,7 +1243,7 @@ namespace HexGame
 
                 s.cord[0] = x;
                 s.cord[1] = y;
-
+                
                 return s.BoardCell[x, y];
             }
             else return null;
