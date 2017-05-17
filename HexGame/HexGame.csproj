@@ -78,8 +78,22 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\GameLogic\Board.cs" />
+    <Compile Include="Assets\GameLogic\Bridge.cs" />
+    <Compile Include="Assets\GameLogic\Communication.cs" />
+    <Compile Include="Assets\GameLogic\Connection.cs" />
+    <Compile Include="Assets\GameLogic\DSU.cs" />
+    <Compile Include="Assets\GameLogic\FinalAnswer.cs" />
+    <Compile Include="Assets\GameLogic\Integration.cs" />
+    <Compile Include="Assets\GameLogic\MonteCarlo.cs" />
+    <Compile Include="Assets\GameLogic\Pair.cs" />
+    <Compile Include="Assets\GameLogic\PriorityQueue.cs" />
+    <Compile Include="Assets\GameLogic\Program.cs" />
+    <Compile Include="Assets\GameLogic\Stack.cs" />
+    <Compile Include="Assets\Scripts\BoardInterFace.cs" />
     <Compile Include="Assets\Scripts\HandleInput.cs" />
     <Compile Include="Assets\Scripts\UIManager.cs" />
+    <Compile Include="Assets\SoundEffects\Plugins\ButtonSoundsEditor\ButtonClickSound.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="GenerateTargetFrameworkMonikerAttribute" />
